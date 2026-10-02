@@ -105,3 +105,12 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q27 | Can a CSV import change stock? | Never for existing stock; it can set opening stock for colours with none yet |
 | Q28 | Does a CSV import change cost price? | Only for new products; existing products keep their purchase-order average |
 | Q29 | PO PDF | Browser "Print → Save as PDF" from a print-friendly page (no PDF library) |
+
+## G. Milestone 7 defaults (2026-10-03) — ★ used until you say otherwise
+
+| Q | Question | ★ Default used |
+|---|---|---|
+| Q30 | Cart limits | Up to 30 different screens, 99 of each |
+| Q31 | When a cart item sells out or runs low | Keep it in the cart, explain it ("Sold out", "Only 2 left — Change to 2"); never change quantities silently |
+| Q32 | Checkout button before Milestone 8 | Shown but disabled, with the shop phone number for ordering now |
+| Q33 | Catalogue page size | 24 screens per page |

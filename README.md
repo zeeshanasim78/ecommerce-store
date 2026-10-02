@@ -6,7 +6,7 @@ Next.js 16 storefront and admin for Caidea's phone-screen business. The plan liv
 - `BUILD_GUIDE.md` — the 20 milestones, in order
 - `CLARIFICATIONS.md` — business decisions (answered and default)
 
-**Status:** Milestones 1–6 done (5 = the stock engine; 6 = vendors, purchase orders, stock ledger, stock counts, product CSV), plus the v1.2 enterprise design brief (3D hero carousel, product cards, PKR-only prices, discount engine, hero/catalogue/discount admin) and the v1.3 home-page changes (themed hero slides with model-accurate phones, numbers band, screen-change guide with a repair animation, “A Grade” names). Next: Milestone 7 (storefront cart).
+**Status:** Milestones 1–7 done (5 = the stock engine; 6 = vendors, purchase orders, stock ledger, stock counts, product CSV; 7 = cart, colour picker, catalogue filters), plus the v1.2 enterprise design brief (3D hero carousel, product cards, PKR-only prices, discount engine, hero/catalogue/discount admin) and the v1.3 home-page changes (themed hero slides with model-accurate phones, numbers band, screen-change guide with a repair animation, “A Grade” names). Next: Milestone 8 (checkout).
 
 ## First-time setup
 
@@ -25,7 +25,7 @@ npm run dev          # start the site
 - http://localhost:3000/login — staff sign-in. The first time, you'll be asked to scan a QR code with Google Authenticator, Microsoft Authenticator or Authy, and you'll get 10 backup codes. **Write the backup codes down.**
 - http://localhost:3000/dev/ui — UI kit (development only)
 
-Pages not built yet (About, Contact, Terms, FAQs, Cart, Track order) show "We couldn't find that page" until their milestones.
+Pages not built yet (About, Contact, Terms, FAQs, Track order) show "We couldn't find that page" until their milestones.
 
 ## What the admin can do now
 
@@ -101,6 +101,8 @@ src/server/inventory/stock.ts    the stock engine — the only code that changes
 src/server/inventory/            stock counts/corrections (adjust.ts) and the ledger query (ledger.ts)
 src/server/purchasing/           purchase orders: landed cost, average cost, receiving
 src/server/catalog/              product CSV import/export
+src/server/storefront/cart.ts   cart pricing (the browser keeps ids + quantities only)
+src/lib/cart-store.ts           the browser side of the cart
 src/server/storefront/catalog.ts storefront product queries (every price goes through the price engine)
 src/proxy.ts                     quick redirect to /login when there's no session cookie
 tests/unit/                      Vitest tests

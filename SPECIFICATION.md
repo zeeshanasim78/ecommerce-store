@@ -1,6 +1,6 @@
 # Caidea Commerce & POS Engine — SPECIFICATION.md
 
-> **Status:** v1.5 — Milestone 6 (§17: vendors, purchase orders, stock ledger page, stock counts, product CSV) on top of v1.4. Milestones 1–6 done, plus the enterprise design brief (§15) and home-page refresh (§16). Next: Milestone 7 (storefront: cart).
+> **Status:** v1.6 — Milestone 7 (§18: cart, colour picker, catalogue filters and pagination) on top of v1.5. Milestones 1–7 done, plus the enterprise design brief (§15) and home-page refresh (§16). Next: Milestone 8 (checkout with COD + manual wallet).
 > **Method:** Specification Driven Development — Constitution → Research → Specify → Clarify → Build.
 > **Rule:** Any gap found during Build stops coding; this file is updated and re-clarified first.
 > **Change log:** every edit to this file gets a line in §14.
@@ -92,7 +92,7 @@ app/
 │  ├─ store/[slug]/page.tsx      /store/:slug Product detail (gallery, spec table, variant picker, compatibility)
 │  ├─ categories/page.tsx        /categories  Category index (v1.2)
 │  ├─ deals/page.tsx             /deals       Discounted products + active promotions (v1.2)
-│  ├─ cart/page.tsx              /cart
+│  ├─ cart/page.tsx              /cart        Browser-kept cart, re-priced on the server (v1.6)
 │  ├─ checkout/page.tsx          /checkout    Address → Shipping → Payment → Review
 │  ├─ checkout/success/page.tsx  /checkout/success?order=…
 │  ├─ order/[code]/page.tsx      /order/:code Public order tracking (code + phone check)
@@ -480,6 +480,7 @@ caidea/
 | 2026-10-02 | 1.3 | Home-page refresh (§16): cities block removed, repair guide + generated video, numbers band, per-slide hero themes and model-accurate phones, hero and banner 20 % shorter, AAA+ grades renamed to A Grade. |
 | 2026-10-02 | 1.4 | Milestone 5 built: stock engine (§6.1a) with direction/notes guards, `withStockTransaction`, `findLedgerDrift`; seed and `db:verify` use it; 17 new tests incl. a real multi-thread race (10 of 50 simultaneous sales succeed). `esbuild` added as a dev dependency for that test. No schema change. |
 | 2026-10-03 | 1.5 | Milestone 6 built (§17): vendors, purchase orders (landed cost, WAC, partial receipts, close short, print/PDF), stock ledger page + CSV, stock counts and corrections on the product page, product CSV import/export, change history. New permission modules `vendors`, `purchasing`, `ledger`, `stockAdjust` (OWNER/MANAGER). No schema change. Defaults Q24–Q29 in CLARIFICATIONS.md. |
+| 2026-10-03 | 1.6 | Milestone 7 built (§18): cart (browser keeps ids + quantities; server re-prices every view), colour picker with per-colour stock state and add to cart, coupon preview, header cart count, `/store` filters for display type, grade, colour and in-stock plus 24-per-page pagination. Currency selector not built (PKR-only since v1.2). Caching stays on path revalidation (§18 explains). No schema change. |
 
 ## 15. v1.2 — Enterprise design brief: decisions and conflict resolutions
 
@@ -530,3 +531,21 @@ caidea/
 **Change history**: the product page lists product create/update entries from `admin_audit_log` with price and grade changes ("Retail price: Rs 68,000 → Rs 68,500").
 
 **Also**: `formatKarachi` now reads SQLite `CURRENT_TIMESTAMP` values as UTC; admin layout hides navigation when printing.
+
+## 18. v1.6 — Milestone 7 as built (2026-10-03)
+
+**Cart** (`src/lib/cart-store.ts`, `src/server/storefront/cart.ts`, `/cart`):
+- The browser stores only `{ variantId, qty }` lines and an optional coupon code (localStorage, key `caidea:cart:v1`; falls back to memory if storage is blocked). Never prices.
+- Every time the cart is shown or changed, the Server Action `getCartQuote` re-reads price (through `effectivePrice`, so sale prices and promotions match the catalogue) and stock. Lines are `ok`, `short` (fewer left — "Change to N"), `sold_out` or `unavailable` (unpublished, archived, brand inactive or unknown — nothing about a hidden product is revealed). The subtotal counts only units that can be bought; `ready` is true only when every line is buyable in full.
+- Limits: 30 different screens, 99 of each. Duplicate lines are merged.
+- Coupon codes are previewed with `checkCoupon` (nothing is used up; redemption stays in checkout, §4.16). Rate limits: 120 quotes/min and 20 coupon tries/10 min per IP.
+- Delivery shows "From Rs X, by city" (cheapest active zone); the real fee is chosen at checkout (M8).
+- The Checkout button is shown disabled until Milestone 8, with the shop phone number when it's set.
+
+**Product page**: colour picker (radio buttons, sold-out colours marked), stock state for the chosen colour ("In stock" / "Only N left" at or below the low-stock threshold / "Out of stock"), quantity limited to what's left minus what's already in the cart, Add to cart with a confirmation and a View cart link. Header Cart pill shows the item count.
+
+**Catalogue (`/store`)**: added filters for display type, quality grade, colour (a product matches if any colour matches; with "In stock only", that colour must be in stock) and in-stock only, as the spec's §2 list requires; 24 screens per page with page links; filter changes go back to page 1; empty form fields are dropped from the address so filtered links stay short.
+
+**Caching (deviation from §12, by decision):** §12 asks for `revalidateTag`. In Next.js 16 tags only work with the "cache components" mode, which would change how every page renders, and its stale-while-revalidate refresh would show a sold unit to the next visitor. Instead every admin change that affects the shop (stock, price, publish) calls `revalidateStorefront()` (purges cached storefront pages immediately); `/store` and `/cart` prices are always live. Measured in a production build: product page showed "Out of stock" 0.1 s after the last unit left. Milestone 16 (performance) may revisit this.
+
+**Not built, by earlier decision:** the PKR/USD currency selector in the M7 guide (storefront is PKR-only since v1.2, Q15).

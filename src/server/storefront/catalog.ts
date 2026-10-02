@@ -57,6 +57,11 @@ export type CatalogFilter = {
   ids?: string[];
   featured?: boolean;
   discountedOnly?: boolean;
+  /** v1.6 hardware filters (spec §2): exact matches, case-insensitive for colour */
+  displayType?: string;
+  grade?: string;
+  color?: string;
+  inStock?: boolean;
   limit?: number;
 };
 
@@ -65,6 +70,8 @@ export function listCatalog(filter: CatalogFilter = {}): CatalogCard[] {
   if (filter.brand) conditions.push(eq(brands.slug, filter.brand));
   if (filter.category) conditions.push(eq(categories.slug, filter.category));
   if (filter.featured) conditions.push(eq(products.isFeatured, true));
+  if (filter.displayType) conditions.push(eq(products.displayType, filter.displayType));
+  if (filter.grade) conditions.push(eq(products.qualityGrade, filter.grade));
   if (filter.ids) conditions.push(filter.ids.length ? inArray(products.id, filter.ids) : sql`0`);
   if (filter.q) {
     const term = `%${filter.q.slice(0, 60)}%`;
@@ -127,6 +134,12 @@ export function listCatalog(filter: CatalogFilter = {}): CatalogCard[] {
   });
 
   if (filter.discountedOnly) cards = cards.filter((c) => c.price.isDiscounted);
+  if (filter.color) {
+    const wanted = filter.color.toLowerCase();
+    cards = cards.filter((c) => c.variants.some((v) => v.color.toLowerCase() === wanted && (!filter.inStock || v.stock > 0)));
+  } else if (filter.inStock) {
+    cards = cards.filter((c) => c.totalStock > 0);
+  }
   return filter.limit ? cards.slice(0, filter.limit) : cards;
 }
 
@@ -193,4 +206,22 @@ export function getCategorySummaries(): CategorySummary[] {
     .groupBy(categories.id)
     .orderBy(asc(categories.sortOrder), asc(categories.name))
     .all();
+}
+
+export type FilterOptions = { displayTypes: string[]; grades: string[]; colors: string[] };
+
+/** Values that actually occur on published products, for the catalogue's filter menus. */
+export function getFilterOptions(): FilterOptions {
+  const live = and(eq(products.isPublished, true), isNull(products.archivedAt));
+  const distinct = (col: typeof products.displayType | typeof products.qualityGrade) =>
+    db.selectDistinct({ v: col }).from(products).where(live).orderBy(asc(col)).all().map((r) => r.v);
+  const colors = db
+    .selectDistinct({ v: productVariants.color })
+    .from(productVariants)
+    .innerJoin(products, eq(products.id, productVariants.productId))
+    .where(and(live, isNull(productVariants.archivedAt)))
+    .orderBy(asc(productVariants.color))
+    .all()
+    .map((r) => r.v);
+  return { displayTypes: distinct(products.displayType), grades: distinct(products.qualityGrade), colors };
 }

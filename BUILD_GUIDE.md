@@ -309,6 +309,10 @@ db.transaction((tx) => {
 
 **Done when:** a product published in admin appears in `/store`; selling the last unit at the counter shows "Out of stock" on the website within seconds; page looks right at 375px.
 
+> ✅ **Built (2026-10-03).** Cart, colour picker + Add to cart, coupon preview, header count, and the extra `/store` filters + pagination (SPECIFICATION.md §18). Landing, catalogue cards/table and product pages already existed from v1.2/v1.3. **Currency selector (step 5) not built** — the storefront is PKR-only since v1.2. **Caching (step 6)** stays on immediate path revalidation instead of tags (§18 explains why). Checked in a production build: a screen published in admin appeared at once; after the last unit left stock (POS arrives in M9, so a stock movement from admin stood in for the counter sale) the product page showed "Out of stock" 0.1 s later and the cart flagged it sold out; no sideways scroll at 375 px.
+>
+> **For M8:** read the same browser cart (`useCart()` / `cart.get()`), send `{ lines, coupon }` to `placeOrder`, and re-price there inside the transaction with the same rules as `quoteCart`; clear the cart with `cart.clear()` after the order is saved; enable the Checkout button in `cart-view.tsx`.
+
 ---
 
 ## Milestone 8 — Checkout with COD + manual wallet *(3–4 days)* — Spec §6.3, §8

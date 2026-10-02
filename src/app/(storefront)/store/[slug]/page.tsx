@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DiscountBadge, PriceTag } from "@/components/store/price-tag";
+import { AddToCart } from "@/components/store/add-to-cart";
 import { ProductGallery } from "@/components/store/product-gallery";
 import { ScreenPlaceholder } from "@/components/store/screen-placeholder";
 import { Badge, GradeBadge, StockBadge } from "@/components/ui/badge";
@@ -65,29 +66,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="mt-8 rounded-bezel bg-white p-6 ring-1 ring-midnight/8">
             <PriceTag price={product.price} size="lg" />
             {product.price.promotion?.bannerText ? <p className="mt-2 text-sm font-semibold text-terracotta">{product.price.promotion.bannerText}</p> : null}
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <StockBadge stock={product.totalStock} lowThreshold={product.lowStockThreshold} />
-              <span className="text-sm text-midnight/70">Cash on delivery available</span>
-            </div>
-            <p className="mt-5 rounded-bezel-sm bg-surface px-4 py-3 text-[0.9375rem]">
-              Online ordering opens soon. To buy this screen now, visit or call the shop.
+            <p className="mt-2 text-sm text-midnight/70">
+              Cash on delivery available · {product.warrantyDays}-day warranty
             </p>
-          </div>
-
-          {product.variants.length ? (
-            <div className="mt-8">
-              <h2 className="font-sans text-base font-semibold">Colours</h2>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {product.variants.map((v) => (
-                  <li key={v.id} className="inline-flex h-9 items-center gap-2 rounded-full bg-white px-4 text-sm font-medium ring-1 ring-midnight/12">
-                    {v.color}
-                    {v.label ? <span className="text-midnight/55">({v.label})</span> : null}
-                    {v.stock <= 0 ? <span className="text-terracotta">sold out</span> : null}
-                  </li>
-                ))}
-              </ul>
+            <div className="mt-6 border-t border-midnight/8 pt-6">
+              {product.variants.length ? (
+                <AddToCart variants={product.variants} lowThreshold={product.lowStockThreshold} productName={`${product.brand} ${product.model}`} />
+              ) : (
+                <StockBadge stock={0} lowThreshold={product.lowStockThreshold} />
+              )}
             </div>
-          ) : null}
+          </div>
 
           <dl className="mt-8 divide-y divide-midnight/8 rounded-bezel bg-white px-6 ring-1 ring-midnight/8">
             {specs.map(([k, v]) => (

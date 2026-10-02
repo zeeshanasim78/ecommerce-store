@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/card";
+import { CartCount } from "./cart-count";
 import { Logo } from "./logo";
 
 /**
@@ -79,6 +80,7 @@ function CartPill() {
         <circle cx="14.5" cy="16.5" r="1.1" fill="currentColor" />
       </svg>
       Cart
+      <CartCount />
     </Link>
   );
 }
