@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+/*
+ * Caidea design tokens — SPECIFICATION.md §0.2.
+ * Tailwind's default palette is switched off so only brand colours exist:
+ * a stray `bg-blue-500` renders nothing, which makes mistakes obvious.
+ */
+@theme {
+  --color-*: initial;
+  --color-midnight: #0b1c33;
+  --color-terracotta: #a52a2a;
+  --color-amber: #d97706;
+  --color-canvas: #fbf8f1;
+  --color-surface: #f6efe5;
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-display: var(--font-epilogue), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  /* Smartphone-bezel radii for containers. Interactive elements use rounded-full. */
+  --radius-bezel-sm: 1.25rem;
+  --radius-bezel: 1.5rem;
+  --radius-bezel-lg: 1.75rem;
+
+  /* Type scale (1.25 ratio) */
+  --text-display: 3.25rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.03em;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-midnight);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 0;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-terracotta);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background-color: var(--color-amber);
+    color: var(--color-midnight);
+  }
+}
+
+/* Tabular figures for prices, stock counts and SKUs */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Glass & glow on dark surfaces only — SPECIFICATION.md §0.2 (v1.2).
+ * Soft amber/terracotta "ambient backlight" behind dark midnight panels.
+ */
+@utility ambient-dark {
+  background-image:
+    radial-gradient(60rem 30rem at 85% 10%, rgb(217 119 6 / 0.16), transparent 60%),
+    radial-gradient(40rem 26rem at 5% 95%, rgb(165 42 42 / 0.18), transparent 60%);
+}
+
+/* Translucent glass panel for use on midnight backgrounds, with the fine 1px light border. */
+@utility glass-dark {
+  background-color: rgb(255 255 255 / 0.06);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+/*
+ * CSS-3D phone model for the hero (SPECIFICATION.md §0.3.1a, v1.2).
+ * Only `transform` and `opacity` animate, so the browser composites it on the GPU at 60 FPS.
+ * --tilt-x / --tilt-y are set from pointer position by the carousel script.
+ */
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility phone-stage {
+  perspective: 1400px;
+  perspective-origin: 50% 40%;
+}
+
+@utility phone-tilt {
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+
+/* v1.3: once per 4-second slide — front, a turn to show this model's rear cameras, then front again. */
+@keyframes phone-turn {
+  0% {
+    transform: rotateY(-24deg) rotateX(5deg);
+  }
+  35% {
+    transform: rotateY(14deg) rotateX(-2deg);
+  }
+  55% {
+    transform: rotateY(168deg) rotateX(2deg);
+  }
+  72% {
+    transform: rotateY(198deg) rotateX(4deg);
+  }
+  100% {
+    transform: rotateY(336deg) rotateX(5deg);
+  }
+}
+
+@utility phone-body {
+  transform-style: preserve-3d;
+  transform: rotateY(-18deg) rotateX(4deg);
+  will-change: transform;
+}
+
+/* Only the visible slide animates; adding the animation when a slide becomes active restarts it from the front. */
+[data-active="true"] .phone-body {
+  animation: phone-turn 4s cubic-bezier(0.45, 0.05, 0.35, 1) infinite;
+}
+
+@utility hero-enter {
+  animation: hero-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-body,
+  [data-active="true"] .phone-body {
+    animation: none;
+    transform: rotateY(-14deg) rotateX(4deg);
+  }
+  .phone-tilt {
+    transition: none;
+  }
+}
+
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The slide timer must keep its real length even under reduced motion; the carousel starts paused there instead. */
+@media (prefers-reduced-motion: reduce) {
+  [data-hero-progress] {
+    animation-duration: 4000ms !important;
+  }
+}
+
+/* Markdown inside hero slides */
+.hero-body a {
+  color: var(--color-canvas);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hero-body ul,
+.hero-body ol {
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.hero-body p + p {
+  margin-top: 0.5rem;
+}
+.hero-body strong {
+  color: var(--color-canvas);
+  font-weight: 600;
+}
+
+/* Markdown on light hero themes (amber, cream) */
+.hero-body-light a,
+.hero-body-light strong {
+  color: var(--color-midnight);
+}

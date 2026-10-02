@@ -1,0 +1,187 @@
+<!doctype html>
+<!--
+  Source of the home-page repair video (SPECIFICATION.md §16, v1.3).
+  A deterministic 6-second animation of an iPhone screen being changed.
+  render(t) draws the scene at time t (seconds); scripts/video/render.py screenshots
+  180 frames (30 fps) and ffmpeg turns them into public/media/screen-change.{webm,mp4,jpg}.
+  Shapes only — no manufacturer logos.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face { font-family: "Epilogue"; font-weight: 700; src: url("../../node_modules/@fontsource/epilogue/files/epilogue-latin-700-normal.woff2"); }
+      @font-face { font-family: "Jakarta"; font-weight: 500; src: url("../../node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-500-normal.woff2"); }
+      @font-face { font-family: "Jakarta"; font-weight: 600; src: url("../../node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-600-normal.woff2"); }
+      html, body { margin: 0; background: #fbf8f1; }
+      svg { display: block; }
+      .step { font: 600 20px Jakarta, sans-serif; fill: #a52a2a; }
+      .title { font: 700 31px Epilogue, sans-serif; fill: #0b1c33; letter-spacing: -0.5px; }
+      .small { font: 500 17px Jakarta, sans-serif; fill: #0b1c33; }
+      .tag { font: 600 15px Jakarta, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <svg id="s" width="720" height="900" viewBox="0 0 720 900" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#24456f" /><stop offset="0.5" stop-color="#0e2340" /><stop offset="1" stop-color="#0b1c33" />
+        </linearGradient>
+        <linearGradient id="lit" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f6c66b" /><stop offset="0.45" stop-color="#d97706" /><stop offset="1" stop-color="#a52a2a" />
+        </linearGradient>
+        <radialGradient id="heat" cx="0.5" cy="0.5" r="0.62">
+          <stop offset="0.72" stop-color="#a52a2a" stop-opacity="0" /><stop offset="0.9" stop-color="#a52a2a" stop-opacity="0.55" /><stop offset="1" stop-color="#d97706" stop-opacity="0" />
+        </radialGradient>
+        <clipPath id="screenClip"><rect x="122" y="182" width="236" height="516" rx="34" /></clipPath>
+      </defs>
+
+      <rect width="720" height="900" fill="#fbf8f1" />
+      <circle cx="380" cy="440" r="330" fill="#f6efe5" />
+
+      <!-- caption -->
+      <text id="stepNo" class="step" x="60" y="74"></text>
+      <text id="title" class="title" x="60" y="118"></text>
+
+      <!-- phone body (open view shows the inside) -->
+      <g id="phone">
+        <rect id="heatRing" x="70" y="130" width="340" height="620" rx="70" fill="url(#heat)" opacity="0" />
+        <rect x="110" y="170" width="260" height="540" rx="46" fill="#3a3633" />
+        <rect x="116" y="176" width="248" height="528" rx="41" fill="#1d1c1b" />
+        <!-- interior -->
+        <g id="inside">
+          <rect x="134" y="300" width="150" height="330" rx="16" fill="#2a2d31" stroke="#454a52" stroke-width="2" />
+          <text x="209" y="470" text-anchor="middle" class="tag" fill="#9aa3ae">BATTERY</text>
+          <rect x="296" y="200" width="56" height="470" rx="10" fill="#1c3557" />
+          <rect x="304" y="220" width="40" height="34" rx="6" fill="#24456f" />
+          <rect x="304" y="270" width="40" height="22" rx="4" fill="#24456f" />
+          <rect x="304" y="560" width="40" height="40" rx="6" fill="#24456f" />
+          <!-- connectors -->
+          <rect id="conBatt" x="300" y="330" width="44" height="20" rx="4" fill="#5a6270" />
+          <rect id="conDisp1" x="300" y="380" width="44" height="18" rx="4" fill="#5a6270" />
+          <rect id="conDisp2" x="300" y="410" width="44" height="18" rx="4" fill="#5a6270" />
+        </g>
+        <!-- front display (hinges open on its right edge) -->
+        <g id="display">
+          <rect x="116" y="176" width="248" height="528" rx="41" fill="#050608" />
+          <rect id="glass" x="122" y="182" width="236" height="516" rx="34" fill="url(#glass)" />
+          <rect id="litGlass" x="122" y="182" width="236" height="516" rx="34" fill="url(#lit)" opacity="0" />
+          <g id="cracks" clip-path="url(#screenClip)" stroke="#e8edf5" stroke-opacity="0.75" stroke-width="2" fill="none">
+            <path d="M190 330 L222 380 L210 430 L248 470 L236 520 L272 585" />
+            <path d="M222 380 L268 360 L300 392 L352 380" />
+            <path d="M210 430 L160 450 L128 520" />
+            <path d="M248 470 L306 486 L340 540 L356 610" />
+            <path d="M236 520 L190 560 L176 640" />
+            <circle cx="222" cy="380" r="10" />
+          </g>
+          <rect x="196" y="190" width="88" height="24" rx="12" fill="#000" />
+          <g id="onScreen" opacity="0">
+            <text x="240" y="430" text-anchor="middle" font-family="Epilogue" font-weight="700" font-size="30" fill="#fbf8f1">Like new</text>
+            <text x="240" y="462" text-anchor="middle" class="small" fill="#fbf8f1" style="fill:#fbf8f1">Caidea screen fitted</text>
+          </g>
+          <!-- suction cup -->
+          <g id="cup" opacity="0">
+            <rect x="154" y="590" width="10" height="44" rx="5" fill="#0b1c33" />
+            <ellipse cx="159" cy="640" rx="30" ry="12" fill="#a52a2a" />
+          </g>
+        </g>
+      </g>
+
+      <!-- display lying open to the right (shows its back and flex cable) -->
+      <g id="panel">
+        <rect x="390" y="170" width="260" height="540" rx="46" fill="#c9ccd1" />
+        <rect x="402" y="182" width="236" height="516" rx="36" fill="#aeb4bd" />
+        <rect x="420" y="360" width="34" height="120" fill="#d97706" />
+        <rect x="406" y="372" width="18" height="26" rx="3" fill="#0b1c33" />
+        <rect x="406" y="440" width="18" height="26" rx="3" fill="#0b1c33" />
+        <text id="panelLabel" x="545" y="450" text-anchor="middle" class="tag" fill="#0b1c33">OLD SCREEN</text>
+      </g>
+
+      <!-- test checklist -->
+      <g id="checks" opacity="0">
+        <rect x="400" y="300" width="270" height="250" rx="28" fill="#ffffff" stroke="#0b1c33" stroke-opacity="0.08" />
+        <g id="c1"><circle cx="440" cy="360" r="14" fill="#0b1c33" /><path d="M433 360 l5 5 l9 -10" stroke="#fbf8f1" stroke-width="3" fill="none" /><text x="468" y="366" class="small">Touch</text></g>
+        <g id="c2"><circle cx="440" cy="420" r="14" fill="#0b1c33" /><path d="M433 420 l5 5 l9 -10" stroke="#fbf8f1" stroke-width="3" fill="none" /><text x="468" y="426" class="small">Brightness &amp; colour</text></g>
+        <g id="c3"><circle cx="440" cy="480" r="14" fill="#0b1c33" /><path d="M433 480 l5 5 l9 -10" stroke="#fbf8f1" stroke-width="3" fill="none" /><text x="468" y="486" class="small">Face ID &amp; sensors</text></g>
+      </g>
+
+      <!-- progress -->
+      <g id="progress"></g>
+      <text x="60" y="860" class="small" style="opacity:0.55">Caidea repair guide — iPhone screen change</text>
+      <rect id="fade" width="720" height="900" fill="#fbf8f1" opacity="0" />
+    </svg>
+
+    <script>
+      const STEPS = [
+        "Heat the edges to soften the glue",
+        "Lift the display and open it like a book",
+        "Disconnect the battery and screen",
+        "Fit the new Caidea screen",
+        "Reconnect, then seal with new glue",
+        "Power on and test everything",
+      ];
+      const $ = (id) => document.getElementById(id);
+      const clamp = (v) => Math.max(0, Math.min(1, v));
+      const ease = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
+      const seg = (t, a, b) => ease(clamp((t - a) / (b - a)));
+
+      // progress bars
+      const prog = $("progress");
+      for (let i = 0; i < 6; i++) {
+        const x = 60 + i * 102;
+        prog.insertAdjacentHTML("beforeend", `<rect x="${x}" y="800" width="92" height="6" rx="3" fill="#0b1c33" fill-opacity="0.12"/><rect id="p${i}" x="${x}" y="800" width="0" height="6" rx="3" fill="#a52a2a"/>`);
+      }
+
+      /** Hinge: scale around a fixed vertical line x0 (simulates rotating about that edge). */
+      const hinge = (el, x0, s) => el.setAttribute("transform", `translate(${x0} 0) scale(${Math.max(s, 0.0001)} 1) translate(${-x0} 0)`);
+
+      function render(t) {
+        const step = Math.min(5, Math.floor(t));
+        $("stepNo").textContent = `Step ${step + 1} of 6`;
+        $("title").textContent = STEPS[step];
+        for (let i = 0; i < 6; i++) $(`p${i}`).setAttribute("width", 92 * clamp(t - i));
+
+        // 1. heat
+        $("heatRing").setAttribute("opacity", t < 1.1 ? 0.35 + 0.65 * Math.abs(Math.sin(t * Math.PI * 2.2)) * (1 - seg(t, 0.85, 1.1)) : 0);
+
+        // 2. open: front display folds shut onto its right edge, then the panel unfolds to the right
+        const closeFront = t < 4 ? 1 - seg(t, 1.0, 1.45) : seg(t, 4.3, 4.65);
+        hinge($("display"), 364, closeFront);
+        $("cup").setAttribute("opacity", t > 0.95 && t < 1.5 ? 1 : 0);
+        const panelOpen = t < 4 ? seg(t, 1.45, 1.85) : 1 - seg(t, 4.0, 4.3);
+        hinge($("panel"), 390, panelOpen);
+        $("panel").setAttribute("opacity", panelOpen > 0.001 ? 1 : 0);
+
+        // 3. connectors lift (disconnect), later reconnect
+        const lift = t < 4 ? seg(t, 2.05, 2.5) : 1 - seg(t, 3.75, 4.0);
+        ["conBatt", "conDisp1", "conDisp2"].forEach((id, k) => {
+          const y = [330, 380, 410][k] - 10 * lift;
+          $(id).setAttribute("y", y);
+          $(id).setAttribute("fill", lift > 0.05 ? "#d97706" : "#5a6270");
+        });
+
+        // 4. swap: old panel slides out, new panel slides in
+        let dx = 0;
+        if (t >= 3.0 && t < 3.35) dx = 340 * seg(t, 3.0, 3.35);
+        else if (t >= 3.35 && t < 3.75) dx = 340 * (1 - seg(t, 3.35, 3.75));
+        $("panel").setAttribute("transform", `${$("panel").getAttribute("transform")} translate(${dx} 0)`);
+        const isNew = t >= 3.35;
+        $("panelLabel").textContent = isNew ? "NEW SCREEN" : "OLD SCREEN";
+        $("panelLabel").setAttribute("fill", isNew ? "#a52a2a" : "#0b1c33");
+        $("cracks").setAttribute("opacity", isNew ? 0 : 1);
+
+        // 6. power on + checks
+        const on = seg(t, 4.75, 5.15);
+        $("litGlass").setAttribute("opacity", on);
+        $("onScreen").setAttribute("opacity", seg(t, 5.0, 5.3));
+        $("checks").setAttribute("opacity", seg(t, 5.0, 5.2));
+        ["c1", "c2", "c3"].forEach((id, k) => $(id).setAttribute("opacity", seg(t, 5.1 + k * 0.18, 5.3 + k * 0.18)));
+
+        // seamless loop: fade out at the end, fade in at the start
+        $("fade").setAttribute("opacity", Math.max(clamp((t - 5.82) / 0.18), 1 - clamp(t / 0.15)));
+      }
+      window.render = render;
+      render(0);
+    </script>
+  </body>
+</html>
