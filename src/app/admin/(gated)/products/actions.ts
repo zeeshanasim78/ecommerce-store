@@ -17,6 +17,9 @@ import { checked, list, optionalText, text } from "@/server/forms";
 import { activeSlideCount, syncHeroFlag } from "@/server/hero";
 import { revalidateStorefront } from "@/server/revalidate";
 import { UPLOAD_ROOT, UploadError, saveImage } from "@/server/uploads";
+import { attempt, goTo } from "@/server/action-helpers";
+import { importProductsCsv } from "@/server/catalog/product-csv";
+import { StockAdjustError, adjustStock, countStock } from "@/server/inventory/adjust";
 
 const go = (path: string, params: Record<string, string>) => redirect(`${path}?${new URLSearchParams(params)}`);
 
@@ -167,7 +170,7 @@ export async function saveProduct(formData: FormData) {
         } else {
           savedId = crypto.randomUUID();
           tx.insert(products).values({ id: savedId, ...values }).run();
-          // Stock starts at 0; it arrives through purchase orders or a stock count (Milestones 5–6).
+          // Stock starts at 0; it arrives through a purchase order or a stock count (spec §6.5).
           tx.insert(productVariants).values({ id: crypto.randomUUID(), productId: savedId, ...variant!, variantSku: `${data.sku}-01` }).run();
         }
         note = applyHeroFeature(tx, { id: savedId!, ...data }, checked(formData, "isFeaturedHero"));
@@ -224,7 +227,7 @@ export async function addVariant(formData: FormData) {
   }
   if (error) go(path, { error });
   revalidateStorefront();
-  go(path, { saved: "Colour added with 0 in stock. Stock arrives through purchase orders (Milestone 6)." });
+  go(path, { saved: "Colour added with 0 in stock. Stock arrives through a purchase order or a stock count below." });
 }
 
 const ImageMetaSchema = z.object({
@@ -324,4 +327,62 @@ export async function deleteImage(formData: FormData) {
   }
   revalidateStorefront();
   go(`/admin/products/${image!.productId}`, { saved: "Image deleted." });
+}
+
+/**
+ * Stock count / adjustment / damage write-off for one colour (spec §6.5). OWNER and MANAGER only;
+ * always a new ledger row written through the stock engine.
+ */
+export async function changeStock(formData: FormData) {
+  const staff = await requireStaff("stockAdjust");
+  const productId = text(formData, "productId");
+  const path = `/admin/products/${productId}`;
+  const [variantId = "", expected = ""] = text(formData, "variant").split("|");
+  const expectedStock = Number(expected);
+  const mode = text(formData, "mode");
+  const raw = text(formData, "quantity");
+  const notes = text(formData, "notes").slice(0, 300);
+
+  const owns = db.select({ id: productVariants.id }).from(productVariants).where(and(eq(productVariants.id, variantId), eq(productVariants.productId, productId))).get();
+  if (!owns || !Number.isSafeInteger(expectedStock)) goTo(path, { error: "Choose a colour." });
+  if (!/^-?\d{1,7}$/.test(raw)) goTo(path, { error: "Enter a whole number." });
+  const n = Number(raw);
+
+  const ctx = await auditContext();
+  const actor = { id: staff.id };
+  const r = attempt(() => {
+    if (mode === "count") {
+      if (n < 0) throw new StockAdjustError("A count can’t be negative.");
+      const res = countStock(db, { variantId, counted: n, notes, expectedStock }, actor, ctx);
+      return res.changed ? `Counted ${n}. Stock corrected from ${res.previousStock} to ${res.newStock}.` : `Counted ${n} — matches the system. Nothing to correct.`;
+    }
+    if (mode === "damage") {
+      if (n <= 0) throw new StockAdjustError("Enter how many units were damaged.");
+      const res = adjustStock(db, { variantId, delta: -n, reason: "DAMAGED_WRITE_OFF", notes, expectedStock }, actor, ctx);
+      return `${n} written off as damaged. Stock is now ${res.newStock}.`;
+    }
+    const res = adjustStock(db, { variantId, delta: n, reason: "MANUAL_ADJUST", notes, expectedStock }, actor, ctx);
+    return `Stock adjusted by ${n > 0 ? `+${n}` : n}. It is now ${res.newStock}.`;
+  });
+  if (!r.ok) goTo(path, { error: r.error });
+  revalidateStorefront();
+  goTo(path, { saved: r.value });
+}
+
+/** Product CSV import (spec §7). All-or-nothing; errors come back as a list on the import page. */
+export async function importProducts(formData: FormData) {
+  const staff = await requireStaff("catalog");
+  const upload = formData.get("file");
+  if (!(upload instanceof File) || upload.size === 0) goTo("/admin/products/import", { error: "Choose a CSV file." });
+  const f = upload as File;
+  if (f.size > 1_000_000) goTo("/admin/products/import", { error: "The file is larger than 1 MB. Split it into smaller files." });
+  if (!/\.csv$/i.test(f.name) && !/csv|text\/plain/.test(f.type)) goTo("/admin/products/import", { error: "Upload a .csv file (in Excel: File → Save As → CSV UTF-8)." });
+
+  const result = importProductsCsv(db, await f.text(), { id: staff.id }, await auditContext());
+  if (!result.ok) goTo("/admin/products/import", { error: result.errors.join("\n") });
+  revalidateStorefront();
+  const r = result as Extract<typeof result, { ok: true }>;
+  goTo("/admin/products", {
+    saved: `Import done: ${r.productsCreated} new and ${r.productsUpdated} updated products, ${r.variantsCreated} new and ${r.variantsUpdated} updated colours${r.openingUnits ? `, ${r.openingUnits} units of opening stock` : ""}.`,
+  });
 }

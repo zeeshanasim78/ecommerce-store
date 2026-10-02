@@ -28,9 +28,17 @@ const displayFormat = new Intl.DateTimeFormat("en-PK", {
   minute: "2-digit",
 });
 
-/** "2 Oct 2026, 2:30 pm" in Karachi time. */
+/**
+ * Milliseconds for an ISO string or a SQLite CURRENT_TIMESTAMP value ("2026-10-02 09:30:00",
+ * which is UTC but carries no zone — Date.parse would read it as server-local time).
+ */
+export function parseTimestamp(value: string): number {
+  return Date.parse(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(value) ? `${value.replace(" ", "T")}Z` : value);
+}
+
+/** "2 Oct 2026, 2:30 pm" in Karachi time. Accepts ISO strings and SQLite timestamps. */
 export function formatKarachi(iso: string | null | undefined): string {
   if (!iso) return "—";
-  const ms = Date.parse(iso);
+  const ms = parseTimestamp(iso);
   return Number.isNaN(ms) ? "—" : displayFormat.format(ms);
 }

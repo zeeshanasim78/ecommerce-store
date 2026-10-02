@@ -27,10 +27,16 @@ const GROUPS: { heading: string; items: Item[] }[] = [
     ],
   },
   {
+    heading: "Stock",
+    items: [
+      { href: "/admin/purchase-orders", label: "Purchase orders", module: "purchasing" },
+      { href: "/admin/vendors", label: "Vendors", module: "vendors" },
+      { href: "/admin/stock-ledger", label: "Stock ledger", module: "ledger" },
+    ],
+  },
+  {
     heading: "Coming next",
     items: [
-      { href: "#", label: "Vendors & purchase orders", milestone: "M6" },
-      { href: "#", label: "Stock ledger", milestone: "M6" },
       { href: "#", label: "Orders", milestone: "M8" },
       { href: "#", label: "Counter sale", milestone: "M9" },
       { href: "#", label: "Returns", milestone: "M11" },

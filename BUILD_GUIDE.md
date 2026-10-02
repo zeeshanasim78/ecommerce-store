@@ -292,6 +292,10 @@ db.transaction((tx) => {
 
 **Done when:** receiving a PO for 20 units raises stock by 20 and shows a ledger row with your user as operator; partial receipt works; editing a product's price is visible in audit log.
 
+> ✅ **Built (2026-10-03).** Admin → Stock: Purchase orders, Vendors, Stock ledger. Product page: "Count or correct stock" and "Change history". Products list: Import / Export CSV. Rules in SPECIFICATION.md §17; logic in `src/server/purchasing/`, `src/server/inventory/adjust.ts`, `ledger.ts`, `src/server/catalog/product-csv.ts` (all unit-tested). Checked in a real browser as a 2FA manager: 20 units received in two parts (8 + 12) with the manager as operator, a stale second receipt refused, a price edit shown in change history, cashier blocked from every stock page and download.
+>
+> **For M7/M8:** sales call `withStockTransaction` + `applyStockMovement` (`STORE_SALE` / `COUNTER_POS`) and then `revalidateStorefront()`; the ledger page already shows order codes for `reference_type = ORDER` rows.
+
 ---
 
 ## Milestone 7 — Storefront *(4–5 days)* — Spec §0.3, §12

@@ -1,19 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { AdminHeader, ConfirmDelete, Notice, Section } from "@/components/admin/ui";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
 import { Table, TD, TH, THead, TR } from "@/components/ui/table";
 import { db } from "@/db/client";
-import { productImages, productVariants, products } from "@/db/schema";
+import { adminAuditLog, productImages, productVariants, products, user } from "@/db/schema";
 import { IMAGE_ANGLES } from "@/db/schema/catalog";
 import { formatMoney, toPaisa } from "@/lib/money";
-import { requireStaff } from "@/server/dal";
+import { canAccess, requireStaff } from "@/server/dal";
+import { formatKarachi } from "@/lib/time";
 import { effectivePrice } from "@/server/pricing/price";
 import { getActivePromotions } from "@/server/storefront/catalog";
-import { addVariant, deleteImage, moveImage, setArchived, updateImage, uploadImages } from "../actions";
+import { addVariant, changeStock, deleteImage, moveImage, setArchived, updateImage, uploadImages } from "../actions";
+import { Textarea } from "@/components/admin/ui";
 import { ProductForm } from "../product-form";
 
 export const metadata = { title: "Edit product" };
@@ -21,11 +23,21 @@ export const metadata = { title: "Edit product" };
 const ANGLE_LABEL: Record<(typeof IMAGE_ANGLES)[number], string> = { FRONT: "Front", BACK: "Back", SIDE: "Side", DETAIL: "Detail" };
 
 export default async function EditProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; error?: string }> }) {
-  await requireStaff("catalog");
+  const staff = await requireStaff("catalog");
+  const canAdjust = canAccess(staff.role, "stockAdjust");
+  const canSeeLedger = canAccess(staff.role, "ledger");
   const [{ id }, { saved, error }] = await Promise.all([params, searchParams]);
   const product = db.select().from(products).where(eq(products.id, id)).get();
   if (!product) notFound();
   const variants = db.select().from(productVariants).where(eq(productVariants.productId, id)).orderBy(asc(productVariants.variantSku)).all();
+  const history = db
+    .select({ id: adminAuditLog.id, action: adminAuditLog.action, before: adminAuditLog.before, after: adminAuditLog.after, createdAt: adminAuditLog.createdAt, who: user.name })
+    .from(adminAuditLog)
+    .leftJoin(user, eq(user.id, adminAuditLog.actorId))
+    .where(and(eq(adminAuditLog.entity, "products"), eq(adminAuditLog.entityId, id), inArray(adminAuditLog.action, ["product.create", "product.update"])))
+    .orderBy(desc(adminAuditLog.createdAt))
+    .limit(15)
+    .all();
   const images = db.select().from(productImages).where(eq(productImages.productId, id)).orderBy(asc(productImages.sortOrder), asc(productImages.createdAt)).all();
 
   const price = effectivePrice(
@@ -173,7 +185,7 @@ export default async function EditProductPage({ params, searchParams }: { params
           </form>
         </Section>
 
-        <Section title="Colours and stock" description="Stock can’t be typed in here: it changes only through purchase orders, sales, returns and stock counts, so every unit is traceable in the stock ledger.">
+        <Section title="Colours and stock" description="Stock can’t be typed over: it changes only through purchase orders, sales, returns and the stock tools below, so every unit is traceable in the stock ledger.">
           <Table>
             <THead>
               <tr>
@@ -181,6 +193,7 @@ export default async function EditProductPage({ params, searchParams }: { params
                 <TH>Variant SKU</TH>
                 <TH>Shelf</TH>
                 <TH className="text-right">In stock</TH>
+                {canSeeLedger ? <TH>History</TH> : null}
               </tr>
             </THead>
             <tbody>
@@ -193,6 +206,13 @@ export default async function EditProductPage({ params, searchParams }: { params
                   <TD className="tabular text-midnight/75">{v.variantSku}</TD>
                   <TD className="text-midnight/75">{v.binLocation ?? "—"}</TD>
                   <TD className={`tabular text-right font-semibold ${v.currentStock <= product.lowStockThreshold ? "text-terracotta" : ""}`}>{v.currentStock}</TD>
+                  {canSeeLedger ? (
+                    <TD>
+                      <Link href={`/admin/stock-ledger?variant=${v.id}`} className="text-sm font-semibold underline decoration-midnight/30 underline-offset-4 hover:decoration-midnight">
+                        Stock history
+                      </Link>
+                    </TD>
+                  ) : null}
                 </TR>
               ))}
             </tbody>
@@ -214,6 +234,71 @@ export default async function EditProductPage({ params, searchParams }: { params
           </form>
         </Section>
 
+        {canAdjust && variants.length > 0 ? (
+          <Section title="Count or correct stock" description="Managers only. Each correction is a new, permanent row in the stock ledger with your name and the reason.">
+            <form action={changeStock} className="grid gap-5 md:grid-cols-2">
+              <input type="hidden" name="productId" value={product.id} />
+              <Field id="variant" label="Colour">
+                <Select id="variant" name="variant" required defaultValue={variants.length === 1 ? `${variants[0]!.id}|${variants[0]!.currentStock}` : ""}>
+                  <option value="" disabled>
+                    Choose…
+                  </option>
+                  {variants.map((v) => (
+                    <option key={v.id} value={`${v.id}|${v.currentStock}`}>
+                      {v.color}
+                      {v.variantLabel ? ` (${v.variantLabel})` : ""} — {v.currentStock} in stock
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field id="mode" label="What happened">
+                <Select id="mode" name="mode" defaultValue="count">
+                  <option value="count">I counted the shelf (enter the count)</option>
+                  <option value="damage">Units were damaged (enter how many)</option>
+                  <option value="adjust">Other correction (+ to add, − to remove)</option>
+                </Select>
+              </Field>
+              <Field id="quantity" label="Quantity">
+                <Input id="quantity" name="quantity" type="number" step={1} min={-1000000} max={1000000} required className="tabular" />
+              </Field>
+              <Field id="notes" label="Reason" hint="Required for damage and corrections; optional for a count.">
+                <Textarea id="notes" name="notes" maxLength={300} className="min-h-11" placeholder="Cracked in storage / found 2 behind shelf B4" />
+              </Field>
+              <div className="md:col-span-2">
+                <Button type="submit">Save to stock ledger</Button>
+              </div>
+            </form>
+          </Section>
+        ) : null}
+
+        <Section title="Change history" description="Who changed this product’s details and prices, newest first.">
+          {history.length === 0 ? (
+            <p className="text-midnight/70">No changes recorded yet.</p>
+          ) : (
+            <ul className="flex flex-col gap-3 text-[0.9375rem]">
+              {history.map((h) => {
+                const changes = describeChanges(h.before, h.after);
+                return (
+                  <li key={h.id} className="border-l-2 border-midnight/15 pl-4">
+                    <span className="font-semibold">{h.action === "product.create" ? "Created" : "Edited"}</span>{" "}
+                    <span className="text-midnight/70">
+                      by {h.who ?? "—"}, {formatKarachi(h.createdAt)}
+                      {(h.after as { via?: string } | null)?.via === "csv" ? " (CSV import)" : ""}
+                    </span>
+                    {changes.length ? (
+                      <ul className="mt-1 text-sm text-midnight/80">
+                        {changes.map((c) => (
+                          <li key={c}>{c}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Section>
+
         <Section title={product.archivedAt ? "Restore product" : "Archive product"} description="Archived products disappear from the shop but keep their stock history, which can never be deleted.">
           <form action={setArchived}>
             <input type="hidden" name="id" value={product.id} />
@@ -226,4 +311,28 @@ export default async function EditProductPage({ params, searchParams }: { params
       </div>
     </>
   );
+}
+
+const TRACKED: Record<string, { label: string; money?: boolean }> = {
+  retailPricePKR: { label: "Retail price", money: true },
+  wholesalePricePKR: { label: "Wholesale price", money: true },
+  salePricePKR: { label: "Sale price", money: true },
+  costPrice: { label: "Cost price", money: true },
+  qualityGrade: { label: "Grade" },
+  model: { label: "Model" },
+  isPublished: { label: "Published" },
+  lowStockThreshold: { label: "Low-stock alert at" },
+  warrantyDays: { label: "Warranty days" },
+};
+
+/** "Retail price: Rs 1,500 → Rs 1,650" for each tracked field that changed (from the audit log). */
+function describeChanges(before: unknown, after: unknown): string[] {
+  if (!after || typeof after !== "object") return [];
+  const b = (before ?? {}) as Record<string, unknown>;
+  const a = after as Record<string, unknown>;
+  const show = (v: unknown, money?: boolean) =>
+    v === null || v === undefined || v === "" ? "none" : money && typeof v === "number" ? formatMoney(toPaisa(v)) : typeof v === "boolean" ? (v ? "yes" : "no") : String(v);
+  return Object.entries(TRACKED)
+    .filter(([k]) => k in a && (before === null || b[k] !== a[k]))
+    .map(([k, t]) => (before === null ? `${t.label}: ${show(a[k], t.money)}` : `${t.label}: ${show(b[k], t.money)} → ${show(a[k], t.money)}`));
 }

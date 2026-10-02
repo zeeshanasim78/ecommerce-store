@@ -94,3 +94,14 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q21 | How to make the 5–6 s iPhone screen-change video | Generated video file from an animation; real footage can replace it in admin |
 | Q22 | 3 branches in Pakistan + 2 in China vs one-shop spec | Display figures only; single stock pool stays |
 | Q23 | Grade wording | "Compatible A Grade" and "OLED A Grade"; OEM Original unchanged |
+
+## F. Milestone 6 defaults (2026-10-03) — ★ used until you say otherwise
+
+| Q | Question | ★ Default used |
+|---|---|---|
+| Q24 | Supplier short-ships and won't send the rest | "Close short" with a reason: received stock stays, the PO becomes Received |
+| Q25 | When can a PO be edited? | Lines only as a draft; shipping/customs/other until the first receipt; notes and expected date until finished |
+| Q26 | How are shipping/customs shared? | By line value (ordered quantities) |
+| Q27 | Can a CSV import change stock? | Never for existing stock; it can set opening stock for colours with none yet |
+| Q28 | Does a CSV import change cost price? | Only for new products; existing products keep their purchase-order average |
+| Q29 | PO PDF | Browser "Print → Save as PDF" from a print-friendly page (no PDF library) |

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { and, asc, eq, isNotNull, isNull, like, or, sql } from "drizzle-orm";
 import { AdminHeader, Notice, Status } from "@/components/admin/ui";
 import { GradeBadge } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClasses } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Table, TD, TH, THead, TR } from "@/components/ui/table";
 import { db } from "@/db/client";
@@ -60,7 +60,17 @@ export default async function ProductsAdminPage({ searchParams }: { searchParams
 
   return (
     <>
-      <AdminHeader title="Products" description="Screens in the catalogue, their photos, prices and storefront flags." actions={<ButtonLink href="/admin/products/new">New product</ButtonLink>} />
+      <AdminHeader title="Products" description="Screens in the catalogue, their photos, prices and storefront flags." actions={
+          <>
+            <a href="/admin/products/export" className={buttonClasses("outline")} download>
+              Export CSV
+            </a>
+            <ButtonLink href="/admin/products/import" variant="outline">
+              Import CSV
+            </ButtonLink>
+            <ButtonLink href="/admin/products/new">New product</ButtonLink>
+          </>
+        } />
       {sp.saved ? <Notice>{sp.saved}</Notice> : null}
       {sp.error ? <Notice tone="error">{sp.error}</Notice> : null}
 

@@ -8,6 +8,12 @@ export const MODULE_ROLES = {
   hero: ["OWNER", "MANAGER", "CONTENT_EDITOR"],
   catalog: ["OWNER", "MANAGER"],
   discounts: ["OWNER", "MANAGER"],
+  // Milestone 6 (spec §7): purchasing and the ledger are OWNER/MANAGER only
+  vendors: ["OWNER", "MANAGER"],
+  purchasing: ["OWNER", "MANAGER"],
+  ledger: ["OWNER", "MANAGER"],
+  /** Manual stock adjustments and stock counts (spec §6.5) */
+  stockAdjust: ["OWNER", "MANAGER"],
 } as const satisfies Record<string, readonly StaffRole[]>;
 
 export type AdminModule = keyof typeof MODULE_ROLES;

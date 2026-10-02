@@ -6,7 +6,7 @@ Next.js 16 storefront and admin for Caidea's phone-screen business. The plan liv
 - `BUILD_GUIDE.md` — the 20 milestones, in order
 - `CLARIFICATIONS.md` — business decisions (answered and default)
 
-**Status:** Milestones 1–5 done (5 = the stock engine), plus the v1.2 enterprise design brief (3D hero carousel, product cards, PKR-only prices, discount engine, hero/catalogue/discount admin) and the v1.3 home-page changes (themed hero slides with model-accurate phones, numbers band, screen-change guide with a repair animation, “A Grade” names). Next: Milestone 6 (admin catalogue, vendors, purchase orders, ledger page).
+**Status:** Milestones 1–6 done (5 = the stock engine; 6 = vendors, purchase orders, stock ledger, stock counts, product CSV), plus the v1.2 enterprise design brief (3D hero carousel, product cards, PKR-only prices, discount engine, hero/catalogue/discount admin) and the v1.3 home-page changes (themed hero slides with model-accurate phones, numbers band, screen-change guide with a repair animation, “A Grade” names). Next: Milestone 7 (storefront cart).
 
 ## First-time setup
 
@@ -39,7 +39,7 @@ Pages not built yet (About, Contact, Terms, FAQs, Cart, Track order) show "We co
 | Promotions | Owner, Manager | Automatic % or Rs discounts for all screens, a brand, a category or one product, with start/end times and an optional site-wide banner |
 | Coupons | Owner, Manager | Codes (typed or generated) for % or Rs off, minimum order, cap, single-use or multi-use with a limit, start/end times |
 
-Stock can't be typed in anywhere — it only changes through the stock engine (`src/server/inventory/stock.ts`), which writes a ledger row for every change. The admin screens that use it arrive in Milestone 6.
+Stock can't be typed in anywhere — it only changes through the stock engine (`src/server/inventory/stock.ts`), which writes a ledger row for every change. Stock arrives by receiving a purchase order (Admin → Purchase orders) or a stock count on the product page.
 Coupons are checked and redeemed by the engine in `src/server/pricing/coupons.ts`; the checkout that uses them comes in Milestone 8.
 
 ## Everyday commands
@@ -98,6 +98,9 @@ src/server/auth-config.ts        Better Auth settings (2FA, rate limits, session
 src/server/dal.ts                requireStaff(): the real security gate for every admin page and action
 src/server/pricing/              price engine (sale + promotions) and coupon engine, with tests
 src/server/inventory/stock.ts    the stock engine — the only code that changes stock
+src/server/inventory/            stock counts/corrections (adjust.ts) and the ledger query (ledger.ts)
+src/server/purchasing/           purchase orders: landed cost, average cost, receiving
+src/server/catalog/              product CSV import/export
 src/server/storefront/catalog.ts storefront product queries (every price goes through the price engine)
 src/proxy.ts                     quick redirect to /login when there's no session cookie
 tests/unit/                      Vitest tests

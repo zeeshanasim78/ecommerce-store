@@ -1,6 +1,6 @@
 # Caidea Commerce & POS Engine — SPECIFICATION.md
 
-> **Status:** v1.4 — stock engine (§6.1a) on top of v1.3. Milestones 1–5 done, plus the enterprise design brief (§15) and home-page refresh (§16). Next: Milestone 6 (admin catalogue, vendors, purchase orders, ledger page).
+> **Status:** v1.5 — Milestone 6 (§17: vendors, purchase orders, stock ledger page, stock counts, product CSV) on top of v1.4. Milestones 1–6 done, plus the enterprise design brief (§15) and home-page refresh (§16). Next: Milestone 7 (storefront: cart).
 > **Method:** Specification Driven Development — Constitution → Research → Specify → Clarify → Build.
 > **Rule:** Any gap found during Build stops coding; this file is updated and re-clarified first.
 > **Change log:** every edit to this file gets a line in §14.
@@ -109,6 +109,9 @@ app/
 │  ├─ hero/                      Hero carousel slides: add, edit, reorder, activate (v1.2)
 │  ├─ categories/ brands/        Catalogue taxonomy (v1.2); products/ gains gallery, flags, sale price
 │  ├─ coupons/ promotions/       Discount engine (v1.2)
+│  ├─ vendors/ purchase-orders/ purchase-orders/[id]/print/  Purchasing (v1.5)
+│  ├─ stock-ledger/ (+ /export)  Read-only ledger + CSV (v1.5)
+│  ├─ products/import/ products/export  Product CSV (v1.5)
 └─ api/
    ├─ auth/[...all]/route.ts           Better Auth handler
    ├─ webhooks/stripe/route.ts         Signature-verified
@@ -117,7 +120,7 @@ app/
    └─ cron/[job]/route.ts              Secret-protected: expire unpaid orders, sync tracking, reconcile stock, backup
 ```
 
-Server Actions (`'use server'`) handle all form mutations; route handlers exist only for webhooks, auth and cron.
+Server Actions (`'use server'`) handle all form mutations; route handlers exist only for webhooks, auth, cron, serving uploads, and read-only CSV downloads (`/admin/products/export`, `/admin/stock-ledger/export`, v1.5) — every one of them calls `requireStaff` itself.
 
 ---
 
@@ -476,6 +479,7 @@ caidea/
 | 2026-10-02 | 1.2.1 | Built v1.2. While building: Better Auth 1.7.7 needed 3 extra `two_factor` columns (`verified`, `failed_verification_count`, `locked_until`) — added in migration 0002; staff accounts are created with `npm run staff:create` (public sign-up disabled); admin roles per module: hero = OWNER/MANAGER/CONTENT_EDITOR, catalogue & discounts = OWNER/MANAGER. Production login requires HTTPS (secure cookies). |
 | 2026-10-02 | 1.3 | Home-page refresh (§16): cities block removed, repair guide + generated video, numbers band, per-slide hero themes and model-accurate phones, hero and banner 20 % shorter, AAA+ grades renamed to A Grade. |
 | 2026-10-02 | 1.4 | Milestone 5 built: stock engine (§6.1a) with direction/notes guards, `withStockTransaction`, `findLedgerDrift`; seed and `db:verify` use it; 17 new tests incl. a real multi-thread race (10 of 50 simultaneous sales succeed). `esbuild` added as a dev dependency for that test. No schema change. |
+| 2026-10-03 | 1.5 | Milestone 6 built (§17): vendors, purchase orders (landed cost, WAC, partial receipts, close short, print/PDF), stock ledger page + CSV, stock counts and corrections on the product page, product CSV import/export, change history. New permission modules `vendors`, `purchasing`, `ledger`, `stockAdjust` (OWNER/MANAGER). No schema change. Defaults Q24–Q29 in CLARIFICATIONS.md. |
 
 ## 15. v1.2 — Enterprise design brief: decisions and conflict resolutions
 
@@ -499,3 +503,30 @@ caidea/
 | 4 | Replace the cities section | **Removed completely (Q20).** New "Changing a screen, explained" section: 6-step repair process, buyer's checklist and a **generated 6-second video** (Q21) of an iPhone screen change, rendered from an animation to WebM/MP4. The owner can replace it with real footage in Admin → Home page. |
 | 5 | AAA+ grades → A Grade | "Compatible Grade AAA+" → **"Compatible A Grade"**, "OLED Grade AAA+" → **"OLED A Grade"** (Q23). Migration 0004 renames existing products and their web addresses; SKUs (internal codes) are unchanged. The blueprint's code comment in §4.1 keeps its original example text because the blueprint is quoted verbatim. |
 | 6 | Numbers section (branches, screens sold, …) | "Caidea in numbers" band; figures are **edited in Admin → Home page** and are display-only (Q22). Seeded values for branches (3 Pakistan, 2 China) come from the owner; the rest are placeholders to confirm. |
+
+## 17. v1.5 — Milestone 6 as built (2026-10-03)
+
+**Roles.** Vendors, purchase orders and the stock ledger: OWNER and MANAGER (§7). Stock counts and corrections: OWNER and MANAGER (`stockAdjust`). Product CSV: same as Products. Every page, action and download checks this in the data layer.
+
+**Purchase orders** (`src/server/purchasing/`):
+| Rule | Decision |
+|---|---|
+| Codes | `PO-0001`, `PO-0002` … (next after the highest); vendor codes `V-001` … if left blank |
+| Currency | Copied from the vendor; currency and FX rate change only while DRAFT. PKR POs always use rate 1 |
+| What can change when | Lines: DRAFT only. Shipping / customs / other: until the first receipt. Expected date and notes: until finished |
+| Landed cost | unit cost × FX + share of (shipping + customs + other); shares by line value using **ordered** quantities, largest-remainder rounding so they add up exactly; by quantity if every line is free. Stored per line on first receipt |
+| Average cost (Q9) | On each receipt line: `new = (old × units on hand across all colours + landed × received) ÷ (on hand + received)`; if nothing is on hand, the landed cost. Written to `products.cost_price` |
+| Receiving | One transaction: stock via `applyStockMovement` (`INBOUND_PO`, landed unit cost, `reference_type = PO`), line `qty_received`, cost price, status, audit. Can't exceed what's outstanding |
+| Double submit | The form carries each line's `qty_received` as shown; if it changed meanwhile, the whole receipt is refused — goods can't be counted twice |
+| Status additions | **Close short**: PARTIALLY_RECEIVED → RECEIVED with a required reason (supplier won't send the rest). Cancel needs a reason and nothing received |
+| Print / PDF | Print-friendly page; the browser's "Save as PDF" makes the file. Supplier-facing only (no landed cost or margins) |
+
+**Stock tools on the product page** (§6.5): "I counted the shelf" (writes the difference with `reference_type = COUNT`; a matching count writes no ledger row; a colour's first count is `OPENING_BALANCE`), "Units were damaged" (`DAMAGED_WRITE_OFF`, reason required), "Other correction" (±, `MANUAL_ADJUST`, reason required). Each carries the stock the form showed and is refused if stock changed meanwhile.
+
+**Stock ledger page**: filters for screen/SKU, movement type, person, reference (PO or order code), Karachi date range and one colour; 50 per page, newest first; CSV of the filtered rows.
+
+**Product CSV**: one row per colour, matched by `sku` / `variant_sku`; all-or-nothing with row-numbered errors; up to 2,000 rows / 1 MB; never changes existing stock; `opening_stock` only for colours with no history; `cost_price` only for new products; sale prices, photos and home/hero flags stay on the product page. Text cells starting with `= + - @` are prefixed with `'` on export (spreadsheet formula injection).
+
+**Change history**: the product page lists product create/update entries from `admin_audit_log` with price and grade changes ("Retail price: Rs 68,000 → Rs 68,500").
+
+**Also**: `formatKarachi` now reads SQLite `CURRENT_TIMESTAMP` values as UTC; admin layout hides navigation when printing.
