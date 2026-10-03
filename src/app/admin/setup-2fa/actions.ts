@@ -55,5 +55,6 @@ async function confirmEnrolment(prev: EnrolState, formData: FormData): Promise<E
 
 /** Single entry point for the form, so the QR data from step 1 stays in state for step 2. */
 export async function enrol(prev: EnrolState, formData: FormData): Promise<EnrolState> {
+  await requireStaffSession(); // gate here too, so every exported action visibly checks first (spec §10)
   return formData.get("intent") === "confirm" ? confirmEnrolment(prev, formData) : startEnrolment(formData);
 }

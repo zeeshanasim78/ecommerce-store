@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/card";
+import { formatPkMobile } from "@/lib/phone";
 import { CartCount } from "./cart-count";
 import { Logo } from "./logo";
 
@@ -61,7 +62,7 @@ function UtilityBar({ phone }: { phone: string | null }) {
               {" "}
               — call{" "}
               <a href={`tel:${phone}`} className="font-semibold whitespace-nowrap text-canvas">
-                {phone}
+                {formatPkMobile(phone)}
               </a>
             </>
           ) : null}

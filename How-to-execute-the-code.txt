@@ -1,0 +1,143 @@
+
+Here's how to test v1.12 on your own computer. It takes about 15 minutes. Run every command in a terminal inside the unzipped caidea folder.
+
+1. Before you start
+You need Node.js 20 or newer (I tested with Node 22). Check with node -v; if it's older, install the LTS version from nodejs.org.
+Use a new folder, so your current copy and its database aren't touched.
+On the phone with your authenticator app (Google Authenticator, Microsoft Authenticator or Authy) ready, because staff sign-in needs 2FA.
+2. Unzip and install
+
+Windows (PowerShell):
+
+powershell
+Expand-Archive caidea-v1.12.zip -DestinationPath C:\caidea-test
+cd C:\caidea-test\caidea
+npm ci
+
+Mac / Linux:
+
+bash
+unzip caidea-v1.12.zip -d ~/caidea-test
+cd ~/caidea-test/caidea
+npm ci
+3. Create the settings file and the database
+bash
+npm run setup:env
+npm run db:setup
+npm run staff:create -- --email owner@caidea.test --name "Test Owner" --role OWNER
+setup:env creates .env.local with sample bank and JazzCash details. That's fine for testing.
+db:setup creates the database, loads sample products and ends with "All checks passed."
+staff:create asks you to type a password for the owner login. Choose one and remember it.
+4. Run the automated checks
+bash
+npm test
+npm run lint
+npm run typecheck
+npm run db:verify
+Command	You should see
+npm test	Tests 162 passed (162)
+npm run lint	nothing printed (no errors)
+npm run typecheck	nothing printed (no errors)
+npm run db:verify	All checks passed.
+5. Build and start the shop
+bash
+npm run build
+npm start
+npm run build ends with a list of pages and no red errors.
+npm start runs the shop. Leave this window open while you test.
+
+Open http://localhost:3000 in the browser on the same computer. Use localhost, not the computer's network address (192.168…); otherwise sign-in and the order cookie won't stick.
+
+6. Test in the browser
+
+A. Shop settings
+
+Go to http://localhost:3000/login, sign in as the owner and set up 2FA. Save the backup codes.
+Go to Admin → Shop settings.
+Enter the Shop phone, WhatsApp number and Sales email, then click Save settings.
+Check that "Free delivery when the customer pays in advance" is ticked, and that the waiting time is 24 hours.
+
+B. A cash-on-delivery order (under Rs 20,000)
+
+Go to the store, open a cheap screen (for example a Galaxy A14), add it to the cart and go to checkout.
+Fill in name, mobile, email (it's required now), address and city.
+In Payment you should see two cards: Cash on delivery and Place order & pay in advance (FREE DELIVERY).
+Choose Cash on delivery. The summary should show the delivery fee plus the COD fee.
+Click Place order. The confirmation page shows the full order and a Download PDF button.
+
+C. A pay-in-advance order (over Rs 20,000)
+
+Use a fresh cart with a Galaxy S23 Ultra (Rs 61,200 in the sample data).
+At checkout, the Cash on delivery card should be greyed out with the message "Only for orders up to Rs 20,000".
+Choose Place order & pay in advance and check that:
+the accounts appear (Bank IBAN, JazzCash, Easypaisa);
+the steps say "Within 24 hours, send the payment slip (screenshot) and the transaction ID with your order number — WhatsApp … or email …";
+the summary shows Delivery: Free (paid in advance);
+the button reads "Place order & pay in advance · Rs …".
+Pick Bank transfer and place the order. The next page should show:
+"Order placed — waiting for your payment";
+the order number in a "write this in the remarks" box;
+the Send payment slip on WhatsApp, Call and Email buttons, and Download PDF.
+Open the PDF and check the delivery line says "Free (paid in advance)".
+
+D. Cash on delivery paused
+
+In Shop settings, set Cash on delivery → Paused, type a message and save.
+At checkout, the COD card should show "Paused right now" with your message. Pay in advance still works.
+Set Cash on delivery back to On and save.
+
+E. Free delivery switched off
+
+In Shop settings, untick Free delivery and save.
+Place another pay-in-advance order: the delivery fee should now be charged.
+Tick Free delivery again and save.
+
+F. Handling an order in admin
+
+Go to Admin → Online orders and open the order from C.
+Click Record payment proof.
+Tick "I checked the statement…" and click Confirm payment. The status changes to Paid.
+Choose a courier, type a tracking number and click Mark dispatched.
+Reopen the customer's order page: it now shows the courier and tracking number.
+
+G. Privacy check
+
+Open a private/incognito window and go to http://localhost:3000/order/<the order number>.
+It must ask for the phone number and show no name or address.
+7. Optional: testing the emails
+
+Without Gmail set up, orders still work; the emails are just recorded as "not sent" in the order's email log.
+
+To test real emails:
+
+Stop the shop with Ctrl + C.
+In .env.local, fill in GMAIL_USER, GMAIL_APP_PASSWORD (the 16-letter app password) and ALERT_EMAIL_TO.
+Run npm start again.
+Use Shop settings → Send a test email, then place an order using your own email address. You should get:
+the order email (items, accounts, 24-hour instructions and a private link);
+a copy at the sales email;
+"payment received" and "dispatched" emails when you do step F.
+8. Optional: testing the 24-hour cancellation
+
+The automatic cancellation runs when this command is called. While npm start is running, open a second terminal in the same folder and run it there. Take CRON_SECRET from .env.local:
+
+powershell
+curl.exe -X POST -H "Authorization: Bearer YOUR_CRON_SECRET" http://localhost:3000/api/cron/expire-unpaid
+
+On Mac/Linux use curl instead of curl.exe.
+
+It returns {"cancelled":[...]}. Only pay-in-advance orders older than 24 hours with no payment proof recorded are cancelled, so a fresh order won't appear in the list.
+
+Updating your existing copy instead
+
+To keep your current data, copy the new files over your existing copy (keep your .env.local and the data folder), then run:
+
+bash
+npm install
+npm run db:migrate
+npm run build
+npm start
+
+db:migrate backs up the database into data/backups/ first.
+
+If checkout still looks like the old version, the old build is still running: stop it, run npm run build again, then npm start.

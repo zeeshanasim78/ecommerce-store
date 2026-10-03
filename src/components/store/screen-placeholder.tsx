@@ -12,7 +12,7 @@ export function ScreenPlaceholder({ brand, model, className }: { brand: string; 
           <span className="block text-[0.6rem] font-medium text-canvas/60">{brand}</span>
           <span className="block font-display text-[0.8rem] leading-tight font-bold text-canvas">{model}</span>
         </div>
-        <span className="absolute top-[3.5%] left-1/2 h-[1.6%] w-[24%] -translate-x-1/2 rounded-full bg-black/70" />
+        <span className="absolute top-[3.5%] left-1/2 h-[1.6%] w-[24%] -translate-x-1/2 rounded-full bg-midnight/80" />
       </div>
     </div>
   );

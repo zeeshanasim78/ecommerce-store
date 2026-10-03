@@ -67,7 +67,7 @@ function loadCoupon(db: DB | Tx, code: string): CouponRule | undefined {
 }
 
 /** Preview for the cart: does this code work for this subtotal right now? Changes nothing. */
-export function checkCoupon(db: DB, code: string, subtotalPaisa: Paisa, now: Date = new Date()): CouponResult {
+export function checkCoupon(db: DB | Tx, code: string, subtotalPaisa: Paisa, now: Date = new Date()): CouponResult {
   return evaluateCoupon(loadCoupon(db, code), subtotalPaisa, now);
 }
 

@@ -84,7 +84,10 @@ export function HeroCarousel({ slides }: { slides: HeroSlideContent[] }) {
       ref={rootRef}
       aria-roledescription="carousel"
       aria-label="Featured screens"
-      className="relative isolate overflow-hidden bg-midnight"
+      className="hero-root relative isolate overflow-hidden bg-midnight"
+      // v1.11: the pause button also stops the phone turning; pressing play overrides reduced motion
+      data-paused={manuallyPaused ? "true" : undefined}
+      data-user-play={userPaused === false ? "true" : undefined}
       onMouseEnter={() => setHoverPaused(true)}
       onMouseLeave={() => {
         setHoverPaused(false);
