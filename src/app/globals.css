@@ -159,11 +159,20 @@
   animation: hero-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+/* v1.11: the carousel's pause button stops the phone too */
+.hero-root[data-paused="true"] .phone-body {
+  animation-play-state: paused;
+}
+
+/* Reduced motion: still unless the shopper presses play themselves (WCAG 2.2.2) */
 @media (prefers-reduced-motion: reduce) {
   .phone-body,
-  [data-active="true"] .phone-body {
+  .hero-root:not([data-user-play]) [data-active="true"] .phone-body {
     animation: none;
     transform: rotateY(-14deg) rotateX(4deg);
+  }
+  .hero-root[data-user-play] [data-active="true"] .phone-body {
+    animation: phone-turn 4s cubic-bezier(0.45, 0.05, 0.35, 1) infinite;
   }
   .phone-tilt {
     transition: none;
@@ -210,4 +219,167 @@
 .hero-body-light a,
 .hero-body-light strong {
   color: var(--color-midnight);
+}
+
+/*
+ * v1.11 — 3D scenes for the last three home sections (SPECIFICATION §23.5). CSS only, no 3D library:
+ * only transform/opacity animate (GPU-composited). Each scene sits in <MotionScene>, which sets
+ * data-play="false" when the scene is off screen, when the shopper pressed pause, or under reduced
+ * motion (until the shopper presses play) — every animation inside then pauses.
+ */
+.motion-scene[data-play="false"] *,
+.motion-scene[data-play="false"] *::before,
+.motion-scene[data-play="false"] *::after {
+  animation-play-state: paused !important;
+}
+
+/* 1. Exploded display assembly (repair section) */
+@utility xp-stage {
+  perspective: 1300px;
+  perspective-origin: 50% 30%;
+}
+@keyframes xp-sway {
+  0%,
+  100% {
+    transform: rotateX(56deg) rotateZ(-38deg);
+  }
+  50% {
+    transform: rotateX(50deg) rotateZ(-22deg);
+  }
+}
+@keyframes xp-split {
+  0%,
+  12% {
+    transform: translateZ(calc(var(--i) * 0.45em));
+  }
+  42%,
+  70% {
+    transform: translateZ(calc(var(--i) * 3.1em));
+  }
+  100% {
+    transform: translateZ(calc(var(--i) * 0.45em));
+  }
+}
+/* Labels stay readable when paused (frame 0): they only brighten and step out while the layers are apart */
+@keyframes xp-label {
+  0%,
+  22%,
+  88%,
+  100% {
+    opacity: 0.7;
+    transform: none;
+  }
+  42%,
+  70% {
+    opacity: 1;
+    transform: translateX(0.4em);
+  }
+}
+.xp-rig {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(56deg) rotateZ(-38deg);
+  animation: xp-sway 14s ease-in-out infinite;
+}
+.xp-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.4em;
+  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--i) * 0.45em));
+  animation: xp-split 7s cubic-bezier(0.55, 0, 0.3, 1) infinite;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-canvas) 18%, transparent);
+}
+.xp-tag {
+  animation: xp-label 7s ease-in-out infinite;
+}
+
+/* 2. Rotating ring of display panes (grades, dark band — glow allowed) */
+@utility ring-stage {
+  perspective: 1100px;
+  perspective-origin: 50% 35%;
+}
+@keyframes ring-spin {
+  from {
+    transform: rotateX(-8deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(-8deg) rotateY(-360deg);
+  }
+}
+@keyframes pane-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.ring-rig {
+  position: relative;
+  transform-style: preserve-3d;
+  animation: ring-spin 18s linear infinite;
+}
+.ring-pane {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.3em;
+  transform: rotateY(calc(var(--i) * 120deg)) translateZ(9.5em);
+  backface-visibility: visible;
+}
+.ring-pane-glow {
+  animation: pane-glow 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.05s);
+}
+
+/* 3. Value cards: 3D tilt on hover, floating icon */
+@keyframes icon-float {
+  0%,
+  100% {
+    transform: translateY(0) rotateY(-16deg) rotateX(8deg);
+  }
+  50% {
+    transform: translateY(-0.55em) rotateY(16deg) rotateX(-4deg);
+  }
+}
+@keyframes icon-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scaleX(0.72);
+    opacity: 0.18;
+  }
+}
+.tilt-card {
+  transform-style: preserve-3d;
+  transition:
+    transform 450ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 450ms ease;
+}
+.tilt-card:hover,
+.tilt-card:focus-within {
+  transform: rotateX(7deg) rotateY(-9deg) translateZ(0.6em);
+  box-shadow: 0 30px 60px -36px color-mix(in srgb, var(--color-midnight) 70%, transparent);
+}
+.float-icon {
+  transform-style: preserve-3d;
+  animation: icon-float 4.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.5s);
+}
+.float-shadow {
+  animation: icon-shadow 4.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.5s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tilt-card {
+    transition: none;
+  }
+  .tilt-card:hover,
+  .tilt-card:focus-within {
+    transform: none;
+  }
 }

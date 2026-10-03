@@ -9,6 +9,7 @@ type Item = { href: string; label: string; module?: AdminModule; milestone?: str
 
 const GROUPS: { heading: string; items: Item[] }[] = [
   { heading: "Overview", items: [{ href: "/admin/dashboard", label: "Dashboard", module: "dashboard" }] },
+  { heading: "Sales", items: [{ href: "/admin/orders", label: "Online orders", module: "orders" }] },
   {
     heading: "Storefront",
     items: [
@@ -34,10 +35,10 @@ const GROUPS: { heading: string; items: Item[] }[] = [
       { href: "/admin/stock-ledger", label: "Stock ledger", module: "ledger" },
     ],
   },
+  { heading: "Shop", items: [{ href: "/admin/settings", label: "Shop settings", module: "settings" }] },
   {
     heading: "Coming next",
     items: [
-      { href: "#", label: "Orders", milestone: "M8" },
       { href: "#", label: "Counter sale", milestone: "M9" },
       { href: "#", label: "Returns", milestone: "M11" },
       { href: "#", label: "Reports", milestone: "M12" },

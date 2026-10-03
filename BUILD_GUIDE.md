@@ -325,6 +325,18 @@ Steps UI: Contact & address → Delivery city (fee + ETA from `delivery_zones`) 
 
 **Done when:** double-clicking "Place order" creates one order; two browsers buying the last unit → one succeeds, the other sees a friendly "just sold out" message; an expired manual-TID order returns stock with a ledger row.
 
+> ✅ **Built (2026-10-03).** See SPECIFICATION.md §19. Also added: **Admin → Shop settings** (owner) for wallet/bank details, WhatsApp and COD limit — set these before checkout can offer wallets. Checked in a production build: a double click made exactly one order and took one unit; two browsers checking out the last unit at the same moment → one order, the other got "just sold out" with a link back to the cart, stock 0; an unpaid JazzCash order past its waiting time was cancelled by `/api/cron/expire-unpaid`, both units came back with an `ORDER_CANCEL_RESTOCK` ledger row; COD refused above the limit; wrong phone shows nothing; checkout fits a 375 px phone.
+>
+> **v1.10 email:** all email through one Gmail account (app password or OAuth 2.0, free-tier daily guard) — SPECIFICATION.md §22.
+>
+> **v1.12 (owner request):** checkout = Cash on delivery or Place order & pay in advance (free delivery, payment slip within 24 h) — SPECIFICATION.md §24.
+> **v1.11 (owner request):** prepaid ordering with screenshot proof, COD On/Paused, Orders admin (M10 Phase A), customer order emails, order details + PDF, 3D home scenes — SPECIFICATION.md §23.
+> **v1.9 security:** IBAN check digits and tamper detection for payment details (alert in admin + email) — SPECIFICATION.md §21; server hardening in M18 step 8.
+>
+> **v1.8 owner changes:** COD limit (`COD_MAX_ORDER_PKR`, Rs 20,000) and all account numbers now come from the environment file — edit `.env.production` / `.env.local` and restart (SPECIFICATION.md §20). Checkout always offers other ways to pay above the limit.
+>
+> **For M9 (POS):** reuse `applyStockMovement(…, "COUNTER_POS")` with the cashier as operator, `nextOrderCode` style codes, and `orders.channel = 'COUNTER'`. **For M10:** orders arrive as `COD_PENDING`/`CONFIRMED` or `UNPAID`/`PENDING_VERIFICATION`/`NEW`; "Verify payment" sets the payment row `SUCCEEDED`, `verified_by/at`, order `PAID`.
+
 ---
 
 ## Milestone 9 — Counter sale (POS) *(3 days)* — Spec §6.4
@@ -336,6 +348,8 @@ Keyboard-first screen: SKU/barcode input (USB scanners type like a keyboard + En
 ---
 
 ## Milestone 10 — Orders admin & couriers *(3–4 days, + API work when keys arrive)* — Spec §9
+
+> **v1.11: Phase A is built** (SPECIFICATION §23.2): `/admin/orders` list + filters, order page with Record payment proof, Confirm payment, Dispatch (courier + CN), Cancel, email log and history; customer emails on each step. Still to do here: PACKED / IN_TRANSIT / DELIVERED steps, Phase B courier adapters, labels, COD remittance.
 
 1. Orders list/detail, status transitions, **Verify payment** button for manual TIDs (checks TID uniqueness).
 2. **Phase A (no API keys yet):** "Book shipment" form where staff paste the CN number from the courier portal.
@@ -413,6 +427,16 @@ Playwright: browse → add to cart → COD checkout; manual TID checkout + admin
 5. **Backups:** Litestream → Cloudflare R2 or Backblaze B2 (continuous), plus a nightly snapshot. Test a restore on another computer.
 6. systemd timers call `/api/cron/*` with `CRON_SECRET` (expire unpaid orders, tracking sync, stock reconcile).
 7. Admin access to the server: SSH key only (or through the tunnel with Cloudflare Access).
+8. **Protect the environment file and secrets (v1.9 security review — SPECIFICATION §21):**
+   - Put the settings at `/etc/caidea/caidea.env`, **outside** the app folder: `sudo install -d -m 700 /etc/caidea`, then `sudo install -m 600 -o root -g root caidea.env /etc/caidea/caidea.env`. Never copy `.env.local` from a development PC.
+   - Run the app as its own unprivileged user (`sudo useradd --system --home /srv/caidea caidea`), never as root or a personal account; the app folder and `data/` belong to `caidea`, `/etc/caidea` to root.
+   - Load the file through systemd, so the app receives the values without being able to read or change the file: in `caidea.service` set `User=caidea`, `EnvironmentFile=/etc/caidea/caidea.env`, `NoNewPrivileges=true`, `ProtectSystem=strict`, `ReadWritePaths=/srv/caidea/data`, `ProtectHome=true`, `PrivateTmp=true`.
+   - Real secrets (`BETTER_AUTH_SECRET`, `CRON_SECRET`, courier/aggregator keys, `GMAIL_APP_PASSWORD` / `GMAIL_OAUTH_CLIENT_SECRET` / `GMAIL_OAUTH_REFRESH_TOKEN`): store them encrypted with `systemd-creds encrypt` and load with `LoadCredentialEncrypted=` instead of plain text in the file; they are then readable only by this service on this machine.
+   - Full-disk encryption (step 1) is required, not optional: the server sits in a shop and can be stolen.
+   - Encrypt backups (Litestream/R2 server-side encryption or `age`), because they contain the database.
+   - Email (v1.10): a Gmail account made only for the shop, 2-Step Verification on, an app password in `GMAIL_APP_PASSWORD` (never the real password), `GMAIL_USER`, `ALERT_EMAIL_TO`; `EMAIL_TEST_SMTP` left blank. Press Admin → Shop settings → Send a test email. After the first start, Admin → Shop settings shows the payment-details fingerprint.
+   - Change `BETTER_AUTH_SECRET` (signs everyone out), `CRON_SECRET` and server passwords whenever a person with server access leaves.
+   - Whenever you change payment details: edit `/etc/caidea/caidea.env` → `sudo systemctl restart caidea` → sign in as owner → Admin → Shop settings → check the values → **I made this change**.
 
 **Done when:** site is live on HTTPS at your domain; unplugging the shop router's main line keeps the site up via the backup line; a backup restored on another machine shows the latest orders.
 
@@ -420,11 +444,16 @@ Playwright: browse → add to cart → COD checkout; manual TID checkout + admin
 
 ## Milestone 19 — Go-live checklist
 
+> **Use the full, tickable checklist doc:** https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e (ten sections with a sign-off table). The list below is the short version.
+
 - [ ] Real products entered with opening stock counted physically
 - [ ] All staff accounts created, each with 2FA enrolled
 - [ ] Live payment keys swapped in; one real small payment per method tested and refunded
 - [ ] Courier live booking tested with one real parcel
 - [ ] Delivery zones, fees, COD limit, warranty policy, USD rate set
+- [ ] Real JazzCash / Easypaisa / bank details in `/etc/caidea/caidea.env` (no SAMPLE warning in Shop settings), IBAN accepted by the check-digit test, payment-details change confirmed by the owner
+- [ ] Alert email tested: change a value, restart, confirm the email arrives, put it back
+- [ ] (v1.11) `BETTER_AUTH_URL` is the real https address (Shop settings → "Links in emails go to"); sales email and WhatsApp set; one test order with "Place order & pay in advance" (delivery shows Free): order email + sales copy arrive, the email link opens the order, PDF downloads, Record proof → Confirm payment → Dispatch emails arrive
 - [ ] Privacy policy, terms, return policy pages published
 - [ ] Backups running + restore tested
 - [ ] Uptime monitor (e.g. UptimeRobot) and error tracking (e.g. Sentry) on

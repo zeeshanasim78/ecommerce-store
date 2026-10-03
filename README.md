@@ -6,7 +6,7 @@ Next.js 16 storefront and admin for Caidea's phone-screen business. The plan liv
 - `BUILD_GUIDE.md` — the 20 milestones, in order
 - `CLARIFICATIONS.md` — business decisions (answered and default)
 
-**Status:** Milestones 1–7 done (5 = the stock engine; 6 = vendors, purchase orders, stock ledger, stock counts, product CSV; 7 = cart, colour picker, catalogue filters), plus the v1.2 enterprise design brief (3D hero carousel, product cards, PKR-only prices, discount engine, hero/catalogue/discount admin) and the v1.3 home-page changes (themed hero slides with model-accurate phones, numbers band, screen-change guide with a repair animation, “A Grade” names). Next: Milestone 8 (checkout).
+**Status:** Milestones 1–8 done (5 = the stock engine; 6 = vendors, purchase orders, stock ledger, stock counts, product CSV; 7 = cart, colour picker, catalogue filters; 8 = checkout, order tracking, shop settings), plus the v1.2 enterprise design brief (3D hero carousel, product cards, PKR-only prices, discount engine, hero/catalogue/discount admin) and the v1.3 home-page changes (themed hero slides with model-accurate phones, numbers band, screen-change guide with a repair animation, “A Grade” names). Next: Milestone 9 (counter sale / POS).
 
 ## First-time setup
 
@@ -25,7 +25,7 @@ npm run dev          # start the site
 - http://localhost:3000/login — staff sign-in. The first time, you'll be asked to scan a QR code with Google Authenticator, Microsoft Authenticator or Authy, and you'll get 10 backup codes. **Write the backup codes down.**
 - http://localhost:3000/dev/ui — UI kit (development only)
 
-Pages not built yet (About, Contact, Terms, FAQs, Track order) show "We couldn't find that page" until their milestones.
+Pages not built yet (About, Contact, Terms, FAQs) show "We couldn't find that page" until their milestones.
 
 ## What the admin can do now
 
@@ -38,9 +38,19 @@ Pages not built yet (About, Contact, Terms, FAQs, Track order) show "We couldn't
 | Categories, Brands | Owner, Manager | Add, rename, hide, order. Renaming a brand renames it on its products; a brand in use can't be deleted |
 | Promotions | Owner, Manager | Automatic % or Rs discounts for all screens, a brand, a category or one product, with start/end times and an optional site-wide banner |
 | Coupons | Owner, Manager | Codes (typed or generated) for % or Rs off, minimum order, cap, single-use or multi-use with a limit, start/end times |
+| Online orders (v1.11) | Owner, Manager | Website orders with filters (needs action, waiting for payment, ready to dispatch…). Per order: Record payment proof (screenshot received — stops the 48-hour cancellation), Confirm payment, Dispatch with courier + tracking number, Cancel (stock goes back), resend an email, email log and history. The customer is emailed at each step |
+| Shop settings | Owner | Contact numbers and sales email, cash on delivery On / Paused (with a checkout message), bank and wallet methods on/off, payment waiting time; payment accounts and Gmail status (read-only, from the environment file) |
+
+**Payments (v1.8):** the cash-on-delivery limit (`COD_MAX_ORDER_PKR`, default Rs 20,000) and the JazzCash / Easypaisa / NayaPay / bank account details live in the environment file (`.env.local` on a development PC, `.env.production` on the shop server). Edit the file and restart the app to change them — see `.env.example`. **v1.9:** the IBAN's check digits are verified, and every change to these details is noticed at start-up: it's written to the audit log, shown as a red alert in Admin until the owner presses “I made this change”, and emailed to `ALERT_EMAIL_TO`.
+
+**Email (v1.10):** everything the shop emails goes through one Gmail account (`GMAIL_USER` + a 16-letter `GMAIL_APP_PASSWORD`, or OAuth 2.0 with `GMAIL_AUTH=oauth2`). Free Gmail sends to about 500 recipients a day, so the app stops ordinary mail at `GMAIL_DAILY_LIMIT` (450). Test it from Admin → Shop settings → Send a test email.
 
 Stock can't be typed in anywhere — it only changes through the stock engine (`src/server/inventory/stock.ts`), which writes a ledger row for every change. Stock arrives by receiving a purchase order (Admin → Purchase orders) or a stock count on the product page.
-Coupons are checked and redeemed by the engine in `src/server/pricing/coupons.ts`; the checkout that uses them comes in Milestone 8.
+Coupons are checked and redeemed by the engine in `src/server/pricing/coupons.ts`.
+
+**Checkout (v1.12):** the customer chooses **Cash on delivery** or **Place order & pay in advance**. Paying in advance gives free delivery (switch in Shop settings) and the customer is asked to send the payment slip and transaction ID with the order number within 24 hours by WhatsApp or email.
+
+**Orders (v1.11):** email is required at checkout. Above the COD limit, or while COD is paused, customers order by bank transfer or wallet, pay with the order number in the remarks and send the screenshot by WhatsApp, a call or the sales email. After ordering they see the full order with a **Download PDF** button and get an email with the details and a private link (30 days). Links in emails use `BETTER_AUTH_URL` — set it to the shop's real https address on the live server.
 
 ## Everyday commands
 
@@ -49,6 +59,8 @@ Coupons are checked and redeemed by the engine in `src/server/pricing/coupons.ts
 | `npm run dev` | Start the site with live reload |
 | `npm run build` then `npm start` | Production build and server (needs HTTPS — see below) |
 | `npm run lint` / `npm run typecheck` / `npm test` | Code checks and unit tests — run before every commit |
+| `npm run setup:env` | Creates `.env.local` (or adds missing payment keys to it) with SAMPLE account details — replace them before going live |
+| `curl -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/expire-unpaid` | Cancel unpaid wallet/bank orders past their waiting time (scheduled on the shop server in M18) |
 | `npm run db:studio` | Browse the database in your browser |
 | `npm run db:generate` | After editing `src/db/schema/*`, create a migration in `drizzle/` (read it before applying) |
 | `npm run db:migrate` | Apply new migrations (backs up the database first into `data/backups/`) |
@@ -103,6 +115,10 @@ src/server/purchasing/           purchase orders: landed cost, average cost, rec
 src/server/catalog/              product CSV import/export
 src/server/storefront/cart.ts   cart pricing (the browser keeps ids + quantities only)
 src/lib/cart-store.ts           the browser side of the cart
+src/server/orders/checkout.ts   placing orders, transaction IDs, expiring unpaid orders
+src/server/settings/            shop settings used by checkout (payment accounts, COD limit) and payment-details tamper detection
+src/server/notify/email.ts      the only email sender: Gmail, with the free-tier daily counter
+src/instrumentation.ts          runs the payment-details check once when the server starts
 src/server/storefront/catalog.ts storefront product queries (every price goes through the price engine)
 src/proxy.ts                     quick redirect to /login when there's no session cookie
 tests/unit/                      Vitest tests

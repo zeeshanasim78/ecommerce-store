@@ -155,17 +155,16 @@ const CATALOGUE: ProductSeed[] = [
   },
 ];
 
-const SETTINGS: Record<Exclude<SettingKey, "home_stats" | "home_video">, unknown> = {
+// COD limit and payment account numbers come from the environment file (v1.8), not the database
+const SETTINGS: Record<Exclude<SettingKey, "home_stats" | "home_video" | "cod_max_order_paisa" | "wallet_accounts" | "bank_account" | "payment_details_seen" | "payment_details_alert" | "email_daily_count" | "sales_email" | "cod_pause_message" | "prepaid_free_delivery">, unknown> = {
   store_name: "Caidea",
   store_phone: "+920000000000", // placeholder — set the real number in admin settings
   whatsapp: "+920000000000",
   usd_pkr_rate: 280, // placeholder rate — the owner updates it in admin settings (Clarify Q3)
   usd_rate_updated_at: new Date().toISOString(),
-  cod_max_order_paisa: 50_000 * 100, // Clarify Q5 default: Rs 50,000
   unpaid_order_ttl_minutes: 30, // Clarify Q3b default (automated wallets)
-  manual_tid_ttl_minutes: 24 * 60, // Clarify Q3b default (manual TID orders)
+  manual_tid_ttl_minutes: 24 * 60, // v1.12 owner: 24 hours to send the payment slip (v1.11 had 48 h)
   enabled_payment_methods: ["COD", "JAZZCASH", "EASYPAISA", "NAYAPAY", "BANK_TRANSFER"],
-  wallet_accounts: { JAZZCASH: null, EASYPAISA: null, NAYAPAY: null }, // shop wallet numbers, set in admin
 };
 
 const slugify = (s: string) => s.toLowerCase().replace(/\+/g, "-plus").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -224,6 +223,7 @@ function seedCore() {
       });
 
       for (const [key, value] of Object.entries(SETTINGS)) {
+        if (value === null) continue; // "not set yet" — the owner fills it in Admin → Shop settings
         tx.insert(settings).values({ key: key as SettingKey, value, updatedBy: SYSTEM_USER_ID }).onConflictDoNothing().run();
       }
 

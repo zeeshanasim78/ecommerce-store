@@ -175,6 +175,48 @@ export const payments = sqliteTable(
   ],
 );
 
+/**
+ * v1.11 — private links to an order's full details and PDF (spec §23). Only a SHA-256 hash of the
+ * random token is stored; the token itself lives in the customer's browser cookie and email link.
+ */
+export const orderAccessTokens = sqliteTable(
+  "order_access_tokens",
+  {
+    id: id(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: timestamp("created_at"),
+  },
+  (t) => [index("order_access_tokens_order_idx").on(t.orderId)],
+);
+
+/** v1.11 — every customer email about an order (spec §23): what was sent, to whom, and whether it left. */
+export const EMAIL_KINDS = ["ORDER_PLACED", "SALES_COPY", "PAYMENT_CONFIRMED", "DISPATCHED", "CANCELLED"] as const;
+export const EMAIL_STATUSES = ["SENT", "FAILED", "SKIPPED"] as const;
+export const emailLog = sqliteTable(
+  "email_log",
+  {
+    id: id(),
+    orderId: text("order_id").references(() => orders.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: EMAIL_KINDS }).notNull(),
+    recipient: text("recipient").notNull(),
+    subject: text("subject").notNull(),
+    status: text("status", { enum: EMAIL_STATUSES }).notNull(),
+    detail: text("detail"),
+    createdBy: text("created_by").references(() => user.id),
+    createdAt: timestamp("created_at"),
+  },
+  (t) => [
+    check("email_log_kind", inList("kind", EMAIL_KINDS)),
+    check("email_log_status", inList("status", EMAIL_STATUSES)),
+    index("email_log_order_idx").on(t.orderId),
+    index("email_log_recipient_idx").on(t.recipient, t.createdAt),
+  ],
+);
+
 export const webhookEvents = sqliteTable(
   "webhook_events",
   {

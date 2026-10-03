@@ -96,7 +96,7 @@ function RearCameras({ layout }: { layout: RearLayout }) {
 }
 
 function FrontCutout({ profile }: { profile: DeviceProfile }) {
-  const base = "absolute left-1/2 -translate-x-1/2 bg-black";
+  const base = "absolute left-1/2 -translate-x-1/2 bg-midnight";
   switch (profile.cutout) {
     case "island":
       return <span className={`${base} rounded-full`} style={{ top: "0.7em", width: "5.6em", height: "1.6em" }} />;
@@ -208,7 +208,7 @@ export function Phone3D({
           </div>
         </div>
         {/* floor shadow */}
-        <div className="mt-[1em] h-[1.4em] w-[12em] rounded-[50%] bg-black/35 blur-[0.8em]" aria-hidden="true" />
+        <div className="mt-[1em] h-[1.4em] w-[12em] rounded-[50%] bg-midnight/35 blur-[0.8em]" aria-hidden="true" />
       </div>
     </div>
   );

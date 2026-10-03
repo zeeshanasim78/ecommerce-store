@@ -7,6 +7,10 @@ import { ProductGallery } from "@/components/store/product-gallery";
 import { ScreenPlaceholder } from "@/components/store/screen-placeholder";
 import { Badge, GradeBadge, StockBadge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/card";
+import { formatMoney, paisa } from "@/lib/money";
+import { readPaymentEnv } from "@/server/settings/payment-env";
+import { getCheckoutSettings } from "@/server/settings/store-settings";
+import { db } from "@/db/client";
 import { getProductBySlug } from "@/server/storefront/catalog";
 
 export const revalidate = 300;
@@ -23,6 +27,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const product = getProductBySlug((await params).slug);
   if (!product) notFound();
+  const codMaxPaisa = readPaymentEnv().codMaxPaisa;
+  const freeDelivery = getCheckoutSettings(db).prepaidFreeDelivery; // v1.12
 
   const specs: Array<[string, string]> = [
     ["Brand", product.brand],
@@ -67,7 +73,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <PriceTag price={product.price} size="lg" />
             {product.price.promotion?.bannerText ? <p className="mt-2 text-sm font-semibold text-terracotta">{product.price.promotion.bannerText}</p> : null}
             <p className="mt-2 text-sm text-midnight/70">
-              Cash on delivery available · {product.warrantyDays}-day warranty
+              {product.price.finalPaisa <= codMaxPaisa
+                ? `Cash on delivery available${freeDelivery ? " · free delivery if you pay in advance" : ""}`
+                : `Pay in advance by bank or wallet${freeDelivery ? " — free delivery" : ""} (cash on delivery up to ${formatMoney(paisa(codMaxPaisa))})`} · {product.warrantyDays}-day warranty
             </p>
             <div className="mt-6 border-t border-midnight/8 pt-6">
               {product.variants.length ? (
