@@ -43,20 +43,6 @@
       "when": 1790953836714,
       "tag": "0005_v1_3_grades_and_guards",
       "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1791015167456,
-      "tag": "0006_v1_11_order_links_email_log",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1791101567456,
-      "tag": "0007_v1_12_prepaid_24h",
-      "breakpoints": true
     }
   ]
 }

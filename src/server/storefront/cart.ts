@@ -1,6 +1,6 @@
 import { and, asc, eq, gt, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
-import type { DB, Tx } from "@/db/connection";
+import type { DB } from "@/db/connection";
 import { brands, productImages, productVariants, products, promotions } from "@/db/schema";
 import { paisa, toPaisa, type Paisa } from "@/lib/money";
 import { checkCoupon } from "@/server/pricing/coupons";
@@ -59,7 +59,7 @@ export type CartQuote = {
   totalBeforeDeliveryPaisa: Paisa;
 };
 
-export function quoteCart(db: DB | Tx, input: CartInput, now: Date = new Date()): CartQuote {
+export function quoteCart(db: DB, input: CartInput, now: Date = new Date()): CartQuote {
   // Merge duplicate lines for the same colour
   const merged = new Map<string, number>();
   for (const l of input.lines) merged.set(l.variantId, Math.min(MAX_LINE_QTY, (merged.get(l.variantId) ?? 0) + l.qty));

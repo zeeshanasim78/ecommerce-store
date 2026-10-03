@@ -4,7 +4,6 @@ import { HeroCarousel, type HeroSlideContent } from "@/components/store/hero-car
 import { RepairVideo } from "@/components/store/repair-video";
 import { SafeMarkdown } from "@/components/store/markdown";
 import { Phone3D } from "@/components/store/phone-3d";
-import { ExplodedPhone, GradeRing, ValueCards } from "@/components/store/scenes-3d";
 import { GradeBadge } from "@/components/ui/badge";
 import { Container, SectionDark } from "@/components/ui/card";
 import { getBrandSummaries, getCategorySummaries, getHeroSlides, listCatalog } from "@/server/storefront/catalog";
@@ -191,11 +190,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* v1.11: what's inside a display assembly, in 3D */}
-          <div className="mt-20">
-            <ExplodedPhone />
-          </div>
-
           <div className="mt-20">
             <h3 className="text-2xl font-bold tracking-[-0.02em] md:text-[2rem]">Before you buy a screen</h3>
             <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -219,15 +213,9 @@ export default function HomePage() {
       {/* Dark pause: how grades work */}
       <SectionDark className="py-20 md:py-28" aria-labelledby="grades-heading">
         <Container>
-          <div className="grid items-center gap-8 lg:grid-cols-[1fr_1.1fr]">
-            <div>
-              <h2 id="grades-heading" className="max-w-2xl text-3xl font-bold tracking-[-0.02em] md:text-[2.5rem] md:leading-tight">
-                How we grade a screen
-              </h2>
-              <p className="mt-4 max-w-lg text-lg leading-relaxed text-canvas/75">Three grades, each tested before it is packed. The grade on the label is the grade in the box.</p>
-            </div>
-            <GradeRing grades={GRADES.map((g) => g.grade)} />
-          </div>
+          <h2 id="grades-heading" className="max-w-2xl text-3xl font-bold tracking-[-0.02em] md:text-[2.5rem] md:leading-tight">
+            How we grade a screen
+          </h2>
           <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-12">
             {GRADES.map((g) => (
               <div key={g.grade} className="border-t border-canvas/15 pt-6">
@@ -242,10 +230,17 @@ export default function HomePage() {
       {/* What we stand for */}
       <section className="py-20 md:py-28" aria-labelledby="values-heading">
         <Container>
-          <h2 id="values-heading" className="text-3xl font-bold tracking-[-0.02em] md:text-[2.5rem] md:leading-tight">
-            What we stand for
-          </h2>
-          <ValueCards values={VALUES} />
+        <h2 id="values-heading" className="text-3xl font-bold tracking-[-0.02em] md:text-[2.5rem] md:leading-tight">
+          What we stand for
+        </h2>
+        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-12">
+          {VALUES.map((v) => (
+            <div key={v.title} className="border-t-2 border-midnight pt-6">
+              <h3 className="text-xl font-bold tracking-[-0.01em]">{v.title}</h3>
+              <p className="mt-3 leading-relaxed text-midnight/75">{v.text}</p>
+            </div>
+          ))}
+        </div>
         </Container>
       </section>
     </>

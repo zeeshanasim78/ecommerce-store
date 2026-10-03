@@ -14,10 +14,6 @@ export const MODULE_ROLES = {
   ledger: ["OWNER", "MANAGER"],
   /** Manual stock adjustments and stock counts (spec §6.5) */
   stockAdjust: ["OWNER", "MANAGER"],
-  /** v1.11 (M10 Phase A): online orders — confirm payments, dispatch, cancel (spec §7, §23) */
-  orders: ["OWNER", "MANAGER"],
-  /** Shop settings: payment accounts, COD limit, contact numbers (spec §7 Settings — OWNER) */
-  settings: ["OWNER"],
 } as const satisfies Record<string, readonly StaffRole[]>;
 
 export type AdminModule = keyof typeof MODULE_ROLES;

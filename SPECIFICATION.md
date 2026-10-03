@@ -1,6 +1,6 @@
 # Caidea Commerce & POS Engine — SPECIFICATION.md
 
-> **Status:** v1.12 — checkout offers two clear choices, Cash on delivery or Place order & pay in advance (free delivery, payment slip within 24 h) (§24), on top of v1.11: prepaid ordering by bank / JazzCash with screenshot proof, a COD on/paused switch, Orders admin (M10 Phase A), customer order emails, full order details + PDF after ordering, and CSS-3D scenes on the home page (§23), on top of v1.10 (§22: all email through one Gmail account, go-live checklist), v1.9 (§21: IBAN check digits, payment-details tamper alerts), v1.8 (§20: payment details from the environment file, COD limit Rs 20,000) and v1.7 (Milestone 8, §19). Milestones 1–8 done. Next: Milestone 9 (counter sale / POS). Milestones 1–8 done, plus the enterprise design brief (§15) and home-page refresh (§16). Next: Milestone 9 (counter sale / POS).
+> **Status:** v1.6 — Milestone 7 (§18: cart, colour picker, catalogue filters and pagination) on top of v1.5. Milestones 1–7 done, plus the enterprise design brief (§15) and home-page refresh (§16). Next: Milestone 8 (checkout with COD + manual wallet).
 > **Method:** Specification Driven Development — Constitution → Research → Specify → Clarify → Build.
 > **Rule:** Any gap found during Build stops coding; this file is updated and re-clarified first.
 > **Change log:** every edit to this file gets a line in §14.
@@ -104,7 +104,7 @@ app/
 │  ├─ page.tsx                   → redirect /admin/dashboard
 │  ├─ dashboard/ products/ products/[id]/ vendors/ purchase-orders/ purchase-orders/[id]/
 │  ├─ orders/ orders/[id]/ counter-sale/ stock-ledger/ returns/ returns/[id]/
-│  ├─ reports/ blog/ testimonials/ settings/ users/   (settings = Shop settings, v1.7)
+│  ├─ reports/ blog/ testimonials/ settings/ users/
 │  ├─ setup-2fa/                 Mandatory TOTP enrolment for staff (M4)
 │  ├─ hero/                      Hero carousel slides: add, edit, reorder, activate (v1.2)
 │  ├─ categories/ brands/        Catalogue taxonomy (v1.2); products/ gains gallery, flags, sale price
@@ -255,7 +255,7 @@ Unique `(provider, provider_ref)` and `(provider, manual_reference)` — the sam
 - `testimonials`: `id, author_name, author_role (e.g. "Repair shop, Lahore"), city, rating, quote, is_published, sort_order`
 - `services`: `id, slug, title, summary, body_md, icon, sort_order` (e.g. bulk supply, screen fitting, warranty)
 - `contact_messages`: `id, name, phone, email, subject, message, status ('NEW'|'REPLIED'|'SPAM'), created_at` (rate-limited + honeypot)
-- `settings`: key/value (`usd_pkr_rate`, `usd_rate_updated_at`, `store_phone`, `whatsapp`, `enabled_payment_methods`, `unpaid_order_ttl_minutes`, `manual_tid_ttl_minutes` …). **v1.8:** the COD limit and payment account numbers are no longer settings rows — they come from the environment file (§20).
+- `settings`: key/value (`usd_pkr_rate`, `usd_rate_updated_at`, `store_phone`, `whatsapp`, `cod_max_order_paisa`, `unpaid_order_ttl_minutes` …)
 - `admin_audit_log`: `id, actor_id, action, entity, entity_id, before (JSON), after (JSON), ip, user_agent, created_at` — every admin mutation other than stock (which has its own ledger).
 
 ### 4.15 Entity relationship overview
@@ -384,7 +384,7 @@ interface PaymentProvider {
 ```
 Rules: amount and currency in the callback must equal the stored payment; webhook event IDs are de-duplicated (§4.10); order is marked `PAID` only from a verified server-to-server callback or a status query — **never from the browser redirect alone**.
 
-**Manual wallet verification (fallback, works on day one):** customer sends to the shop's JazzCash/Easypaisa/NayaPay number (from the environment file, §20), enters the **Transaction ID (TID)** and sender number at checkout → order `PENDING_VERIFICATION` → staff confirm against the merchant wallet statement in `/admin/orders` → `PAID` (audit-logged, TID unique-constrained).
+**Manual wallet verification (fallback, works on day one):** customer sends to the shop's JazzCash/Easypaisa/NayaPay number, enters the **Transaction ID (TID)** and sender number at checkout → order `PENDING_VERIFICATION` → staff confirm against the merchant wallet statement in `/admin/orders` → `PAID` (audit-logged, TID unique-constrained).
 
 ## 9. Logistics architecture (adapter pattern)
 
@@ -481,12 +481,6 @@ caidea/
 | 2026-10-02 | 1.4 | Milestone 5 built: stock engine (§6.1a) with direction/notes guards, `withStockTransaction`, `findLedgerDrift`; seed and `db:verify` use it; 17 new tests incl. a real multi-thread race (10 of 50 simultaneous sales succeed). `esbuild` added as a dev dependency for that test. No schema change. |
 | 2026-10-03 | 1.5 | Milestone 6 built (§17): vendors, purchase orders (landed cost, WAC, partial receipts, close short, print/PDF), stock ledger page + CSV, stock counts and corrections on the product page, product CSV import/export, change history. New permission modules `vendors`, `purchasing`, `ledger`, `stockAdjust` (OWNER/MANAGER). No schema change. Defaults Q24–Q29 in CLARIFICATIONS.md. |
 | 2026-10-03 | 1.6 | Milestone 7 built (§18): cart (browser keeps ids + quantities; server re-prices every view), colour picker with per-colour stock state and add to cart, coupon preview, header cart count, `/store` filters for display type, grade, colour and in-stock plus 24-per-page pagination. Currency selector not built (PKR-only since v1.2). Caching stays on path revalidation (§18 explains). No schema change. |
-| 2026-10-03 | 1.7 | Milestone 8 built (§19): `/checkout` (contact & address → city → payment → review), `placeOrder` per §6.3, success page with WhatsApp confirm, `/order` + `/order/:code` tracking with phone check and transaction-ID entry, `api/cron/expire-unpaid` and `reconcile-stock`, owner-only Admin → Shop settings, new setting `bank_account`. Settings with no value are stored as no row (value is NOT NULL). No schema change. Defaults Q34–Q39. |
-| 2026-10-03 | 1.8 | Owner change requests (§20): `COD_MAX_ORDER_PKR` (default **Rs 20,000**) and every wallet/bank account read from the environment file — edit + restart, no code change; Admin → Shop settings shows them read-only. Checkout always lists the other ways to pay, with account numbers, when COD isn't allowed; call/WhatsApp fallback if none are set up. Product pages say when COD doesn't apply. Constitution checks added to the unit tests; fixed `bg-black` (not a token, rendered no colour) on the 3D phone and placeholder. Seed no longer writes `cod_max_order_paisa`/`wallet_accounts`. |
-| 2026-10-03 | 1.9 | Security review of where settings live (§21) and two improvements: (1) **IBAN check digits** (ISO 13616 mod-97) — a mistyped IBAN switches bank transfer off with a clear reason; sample IBAN corrected to `PK56SAMP0000000000000000`; (2) **tamper detection** — at every start the app fingerprints the payment details (SHA-256); a change writes an audit entry with old/new values, shows an alert on the owner's/managers' dashboard and in Shop settings until the OWNER presses "I made this change" (audited), and emails `ALERT_EMAIL_TO` (and the old address if that changed) via `SMTP_*`. New: `src/instrumentation.ts`, `payment-integrity.ts`, `notify/email.ts`, settings keys `payment_details_seen` / `payment_details_alert`, dependency `nodemailer` 10, dev dependency `smtp-server` (tests). Server hardening added to BUILD_GUIDE M18/M19. Dashboard now explains vendors/purchasing/ledger/settings refusals. No schema change. |
-| 2026-10-03 | 1.10 | Owner request (§22): **all email goes through one Gmail account** over smtp.gmail.com:465 (TLS). Sign-in from the environment file: `GMAIL_AUTH=app_password` (default; `GMAIL_USER` + 16-letter `GMAIL_APP_PASSWORD`, needs 2-Step Verification) or `oauth2` (`GMAIL_OAUTH_CLIENT_ID/_SECRET/_REFRESH_TOKEN`). Free-tier guard: recipients counted per Karachi day, ordinary mail stops at `GMAIL_DAILY_LIMIT` (450), security alerts may use up to Gmail's 500. `SMTP_*` / `ALERT_EMAIL_FROM` retired (`npm run setup:env` migrates). Shop settings: Gmail status, today's count, owner-only "Send a test email" (audited). `EMAIL_TEST_SMTP` accepts only a mail server on the same machine (tests). New setting `email_daily_count`. Unit test: only `notify/email.ts` may use nodemailer. Go-live checklist created as a shared doc. No schema change. |
-| 2026-10-03 | 1.11 | Owner request (§23): (1) above the COD limit — or while COD is **paused** — shoppers always order by bank transfer / JazzCash (all live accounts shown with titles, IBAN and numbers), write the order number in the transfer remarks and send the screenshot by WhatsApp, call or the new **sales email**; (2) Shop settings: COD **On / Paused** switch with an optional checkout message, sales email, contact changes emailed to `ALERT_EMAIL_TO`, red warning when no prepaid method is live; payment wait **48 h** (migration moves the old 24 h default); (3) **Orders admin** (M10 Phase A, OWNER/MANAGER): list + filters, Record payment proof (stops expiry), Confirm payment, Dispatch (courier + CN), Cancel (stock back through the engine, coupon back, refund tick when paid), resend email, email log, history — all audited; (4) after ordering the ordering browser sees full order details with **Download PDF** (pdf-lib, server-side); private access via a random 30-day token (SHA-256 stored) in an httpOnly cookie and the email link; the bare order number still shows no personal data; (5) **email required** at checkout; order-placed email + sales copy sent after commit (never blocks), payment-confirmed / dispatched / cancelled emails from admin; max 3 order emails per address per day; (6) CSS-3D scenes on the last three home sections with pause buttons; hero pause also stops the phone; reduced motion starts still but play works. Migration 0006: `order_access_tokens`, `email_log`. Settings `sales_email`, `cod_pause_message`. |
-| 2026-10-04 | 1.12 | Owner request (§24): checkout payment step is two choices — **Cash on delivery** or **Place order & pay in advance** (then which account: bank / JazzCash / …); **free delivery** for pay-in-advance orders (Shop settings switch, default on; COD still pays delivery + COD fee); after ordering the customer is told to send the **payment slip and transaction ID with the order number within 24 hours by WhatsApp or email**; payment wait back to **24 h** (migration 0007 moves the v1.11 48 h default; Q52 replaces Q51). Setting `prepaid_free_delivery`. |
 
 ## 15. v1.2 — Enterprise design brief: decisions and conflict resolutions
 
@@ -555,124 +549,3 @@ caidea/
 **Caching (deviation from §12, by decision):** §12 asks for `revalidateTag`. In Next.js 16 tags only work with the "cache components" mode, which would change how every page renders, and its stale-while-revalidate refresh would show a sold unit to the next visitor. Instead every admin change that affects the shop (stock, price, publish) calls `revalidateStorefront()` (purges cached storefront pages immediately); `/store` and `/cart` prices are always live. Measured in a production build: product page showed "Out of stock" 0.1 s after the last unit left. Milestone 16 (performance) may revisit this.
 
 **Not built, by earlier decision:** the PKR/USD currency selector in the M7 guide (storefront is PKR-only since v1.2, Q15).
-
-## 19. v1.7 — Milestone 8 as built (2026-10-03)
-
-**Checkout (`/checkout`, `src/server/orders/checkout.ts`)** — one page, four numbered steps: 1 contact & address, 2 delivery city (fee + ETA from `delivery_zones`), 3 payment, 4 review with a live total. Guest checkout (Q7: accounts come later). `placeOrder` runs §6.3 in one `BEGIN IMMEDIATE` transaction:
-1. Idempotency key from the server render → a repeat submit returns the same order (`repeated: true`).
-2. Payment method must be switched on **and** have account details (wallets/bank); the city must be active; COD only where the zone allows it and only up to the COD limit (v1.8: `COD_MAX_ORDER_PKR` in the environment file, default Rs 20,000 — §20).
-3. Every line re-priced with the cart rules (`quoteCart`) — any line not fully buyable refuses the order with `SOLD_OUT` and the problem lines.
-4. Total = subtotal − coupon + delivery fee + COD fee (COD only). If the shopper's reviewed total differs → `PRICE_CHANGED`, nothing saved.
-5. Order (`CA-ORD-YYMMDD-NNNN`, Karachi date, daily sequence), items (price, cost and product snapshots), stock out through `applyStockMovement` (`STORE_SALE`, operator `system`), coupon redeemed with `redeemCoupon`, payment row.
-Statuses: COD → payment `COD_PENDING`, order `CONFIRMED` (§6.3); wallet/bank with transaction ID → `PENDING_VERIFICATION`, without → `UNPAID`; both start `NEW`. Payment rows: COD `provider = CASH`; wallets and bank `provider = MANUAL` with the TID in `manual_reference` (upper-case, unique across all manual payments, §4.9). Rate limit: 12 attempts / 10 min per IP. Validation: Pakistani mobile numbers normalised to `+923…` (`src/lib/phone.ts`).
-
-**After ordering** — the cart is cleared; `/checkout/success?order=…` shows only the number, total and how to pay (no name, phone or address); a "Confirm on WhatsApp" link opens a pre-filled message to the shop's WhatsApp. `/order` and `/order/:code` show the order only after the checkout phone number matches (rate-limited 15 / 10 min per IP, nothing personal in the address bar); unpaid wallet/bank orders can add their transaction ID there (`submitTransactionId`).
-
-**Expiry job** — `POST /api/cron/expire-unpaid` with `Authorization: Bearer $CRON_SECRET` (constant-time check, secret ≥ 32 characters). Wallet/bank orders still `UNPAID` after `manual_tid_ttl_minutes` (default 24 h, Q3b) are cancelled: stock returns via `ORDER_CANCEL_RESTOCK` (operator `system`), payment row `FAILED`, coupon use given back, shop pages refreshed. Orders that already have a transaction ID wait for staff. `POST /api/cron/reconcile-stock` returns the §6.5 ledger check (500 if anything drifts). Scheduling them on the shop server is Milestone 18.
-
-**Admin → Shop settings** (OWNER only, audited): shop phone and WhatsApp, which payment methods are on, payment waiting time. **v1.8:** COD limit and account numbers moved to the environment file and are shown here read-only (§20). A wallet or bank method appears at checkout only when its details are set.
-
-**Not in M8 (later milestones):** staff verifying transaction IDs, packing and courier booking (M10 Orders admin); customer accounts and wholesale prices for approved technicians (later, Q7/Q10); automated wallet APIs (M14).
-
-## 20. v1.8 — Owner change requests to payments (2026-10-03)
-
-| # | Request | Decision / implementation |
-|---|---|---|
-| 1 | COD limit in an environment variable, Rs 20,000 for now | `COD_MAX_ORDER_PKR` (whole rupees; `0` = never; default **20000** if unset or malformed). Read by `src/server/settings/payment-env.ts` on every request, so editing `.env.production` (or `.env.local`) and restarting the app changes it — no code change, no rebuild. |
-| 2 | Orders above the limit had no other way to pay | Checkout now checks the limit as soon as the cart total is known, explains it ("Cash on delivery: only for orders up to Rs 20,000 — this order is Rs 61,400"), and lists the other methods **with their account numbers on each option** before one is chosen. A COD choice that becomes invalid is cleared. If no other method is set up, the shopper is given the shop phone and a WhatsApp link — never a dead end. Product pages above the limit say "Pay by wallet or bank transfer (cash on delivery up to Rs 20,000)". The server rule is unchanged: `placeOrder` refuses COD above the limit, accepts wallet/bank orders. |
-| 3 | Account numbers (bank IBAN, JazzCash …) in environment variables | `JAZZCASH_ACCOUNT_TITLE/NUMBER`, `EASYPAISA_ACCOUNT_TITLE/NUMBER`, `NAYAPAY_ACCOUNT_TITLE/NUMBER`, `BANK_NAME`, `BANK_ACCOUNT_TITLE`, `BANK_IBAN` (Pakistani IBAN, 24 characters). A blank pair = method not offered; a malformed one is switched off and reported to the owner. |
-| — | Conflict with v1.7 (accounts and COD limit were edited in Admin → Shop settings) | Resolved by the owner's request: the environment file is the **only** source for these (one place, no disagreement). Shop settings shows them read-only, lists any problems, and warns while SAMPLE values are in use. Phone, WhatsApp, methods on/off and the waiting time stay editable there. |
-
-`.env.example` documents every key (with SAMPLE values marked); `npm run setup:env` adds any missing payment keys to an existing `.env.local` without changing values that are set. Replace every SAMPLE value before go-live.
-
-**Re-check against the requirements (all passing):** `tests/unit/constitution.test.ts` now enforces on every `npm test`: only the six colour tokens (this found `bg-black` on the 3D phone cut-out and placeholder notch — not a token, so it rendered nothing; now `midnight`), PKR-only shopper code, `requireStaff` on every admin page/action/download, cron secret check, no `sql.raw` outside the CHECK helper, no `dangerouslySetInnerHTML`, secrets and DB git-ignored, every environment key documented, COD default Rs 20,000. Also run: 109 unit tests, `db:verify` (22 guard checks), lint, typecheck, production build, and the browser suites (M6 admin 31, M7 cart 33, M8 checkout 44 checks, including a real edit-and-restart of the environment file).
-
-## 21. v1.9 — Payment-details security (2026-10-03)
-
-**Evaluation (owner question: environment variables or something more secure?)**
-- Two kinds of values. *Shown to every customer* (COD limit, IBAN, account titles, wallet numbers): not secret — the risk is a **silent swap** to an attacker's account, so what matters is who can change them and whether it is noticed. *Real secrets* (`BETTER_AUTH_SECRET`, `CRON_SECRET`, `SMTP_PASS`, future courier/gateway keys, the database): must never be read by anyone.
-- Options weighed: environment file (needs server access to change; no record of changes), database via admin (easy, audited, but one hijacked owner login or app bug could redirect payments), secrets manager such as Vault / AWS Secrets Manager / Doppler / Infisical (built for teams in the cloud; adds cost and an outage risk for one shop server).
-- **Decision:** keep the environment file for payment details (v1.8), add detection and validation in the app (below), and harden the server in Milestone 18 (root-owned `/etc/caidea/caidea.env` loaded by systemd, app as its own user, `systemd-creds` for real secrets, full-disk and backup encryption — BUILD_GUIDE M18 step 8).
-
-**1. IBAN check digits** — `isValidPkIban()` in `src/server/settings/payment-env.ts`: format `PK` + 2 check digits + 4-letter bank code + 16 digits, and the ISO 13616 mod-97 remainder must be 1. Catches any single mistyped character and most swaps. Fails → bank transfer switched off, problem listed in Shop settings.
-
-**2. Tamper detection** — `src/server/settings/payment-integrity.ts`, run once at every server start from `src/instrumentation.ts` (not during `next build`):
-| Step | Behaviour |
-|---|---|
-| Fingerprint | SHA-256 of what customers are actually shown (COD limit, each wallet, bank, plus the alert address), stored in setting `payment_details_seen` with the time. First start = baseline (audited). |
-| Change found | Audit entry `payment_details.changed` with old → new values (actor `system`); alert stored in `payment_details_alert`. Several unconfirmed changes merge, keeping the last *confirmed* value as "was" (including "not set"). Changing back to the confirmed values clears the alert (`payment_details.reverted`). |
-| Owner alert | Red panel on Admin → Dashboard (OWNER and MANAGER) and Admin → Shop settings, listing each field was/now, until the OWNER presses **I made this change** (`payment_details.acknowledged`, with name, IP and time). |
-| Email | Sent to `ALERT_EMAIL_TO` — and to the previous address if the alert address itself changed — through the shop's Gmail account (v1.10, §22; was `SMTP_*` in v1.9). TLS required except to a mail server on the same machine. Result recorded (`payment_details.alert_emailed` / `…_email_failed`); a failed email never stops the shop starting. |
-| Limits | Someone with full control of the server could also edit the database or the alert settings; the email to the *old* address, the audit trail and server hardening (M18) are what make that hard to hide. WhatsApp alerts would need Meta's paid WhatsApp Business API — not built. |
-
-**Tests:** `tests/unit/payment-env.test.ts` (IBAN check digits), `tests/unit/payment-integrity.test.ts` (baseline, change, merge incl. "not set", revert, acknowledge, alert-address change notifies old + new, real SMTP delivery to a local test mail server, failures recorded). Browser walk-through (production build): baseline recorded; editing the environment file and restarting shows the alert on the dashboard and Shop settings with was/now values, the email arrives, a one-digit IBAN typo is rejected and bank transfer disappears from checkout, the owner's confirmation clears the alert and is audited, restoring the file is noticed too.
-
-## 22. v1.10 — Email through Gmail only (2026-10-03)
-
-**Owner decision:** every email the shop sends goes through one Gmail account, within Gmail's free tier; any Google parameters live in the environment file.
-
-| Topic | Rule |
-|---|---|
-| One sender | `src/server/notify/email.ts` → `sendEmail(db, {to, subject, text, priority})`. A unit test fails if any other file imports nodemailer. Order and customer emails in later milestones must use it too. |
-| Connection | `smtp.gmail.com`, port 465, TLS from the first byte — fixed in code. From = `GMAIL_FROM_NAME <GMAIL_USER>` (Gmail rewrites any other From). |
-| Sign-in (`GMAIL_AUTH`) | `app_password` (default): `GMAIL_USER` + `GMAIL_APP_PASSWORD` (16 letters, spaces ignored; the account needs 2-Step Verification; changing the Gmail password cancels it). `oauth2`: `GMAIL_OAUTH_CLIENT_ID`, `GMAIL_OAUTH_CLIENT_SECRET`, `GMAIL_OAUTH_REFRESH_TOKEN` (scope `https://mail.google.com/`; nodemailer trades the refresh token for short-lived access tokens; the consent screen must be "In production" or Google expires the refresh token after 7 days). |
-| Free tier | Free Gmail sends to about 500 recipients a day; going over blocks sending for up to 24 hours. The app counts recipients per Karachi day (setting `email_daily_count`, reserved atomically before sending). Ordinary mail stops at `GMAIL_DAILY_LIMIT` (default 450, max 500); `priority: "security"` may use up to 500. Over the limit = not sent, reason recorded, nothing crashes. |
-| Problems | Missing/invalid values are listed in Admin → Shop settings (e.g. a normal password typed instead of an app password). Gmail sign-in errors (535 / invalid_grant) come back with a plain hint. |
-| Owner tools | Shop settings → Email (Gmail): sender, sign-in method, alert address, today's count, **Send a test email** (owner only, audited as `email.test_sent` / `email.test_failed`). |
-| Tests | `EMAIL_TEST_SMTP=127.0.0.1:<port>` sends to a mail server on the same machine instead of Gmail; any other host is ignored (mail can't be diverted), and Shop settings shows a warning while it is set. Must be blank on the live server. |
-| Retired | `SMTP_HOST/PORT/USER/PASS`, `ALERT_EMAIL_FROM` — `npm run setup:env` removes them (keeping a Gmail user/password if one was there); Shop settings warns if they remain. |
-
-Sources for the Gmail limits and sign-in rules: [Gmail sending limits](https://support.google.com/mail/answer/22839), [Sign in with app passwords](https://support.google.com/accounts/answer/185833).
-
-**Go-live checklist:** a shared, tickable doc with ten sections (blockers, business decisions, catalogue and stock, payments, Gmail, staff, server and security, couriers and legal pages, final rehearsal, sign-off): https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e. BUILD_GUIDE Milestone 19 points to it.
-
-## 23. v1.11 — Prepaid ordering, COD switch, Orders admin, order emails and PDF, 3D scenes (2026-10-03)
-
-**Owner request (5 items) and decisions (CLARIFICATIONS §L, Q48–Q51).** Checked against the Constitution and §10–§12 before building; nothing conflicts. The only spec rules touched are additive: email is now required at checkout (Q48), the payment wait is 48 h (Q51), and M10 Phase A was brought forward (Q50).
-
-### 23.1 Ordering above the COD limit, and with COD paused
-| Topic | Rule |
-|---|---|
-| Never a dead end | Whenever COD can't be used (order above `COD_MAX_ORDER_PKR`, city without COD, or COD paused) checkout lists every live prepaid method with its account details — bank name, account title, IBAN; JazzCash/Easypaisa/NayaPay title and number — and the steps: place the order → get the order number → pay and write the order number in the transfer remarks → send the screenshot (WhatsApp / call / sales email) → the shop confirms by email → dispatch email. If no prepaid method is live, shoppers are told to call/WhatsApp (as v1.8) and Shop settings shows a red warning. |
-| COD switch | Shop settings → Cash on delivery **On / Paused** (stored as `COD` in `enabled_payment_methods`), optional message (`cod_pause_message`, ≤ 200 chars, control characters removed) shown at checkout. `placeOrder` refuses COD while paused with a clear message. |
-| Contacts | Shop phone, WhatsApp and the new **sales email** (`sales_email`) are shown at checkout, on the order page, in emails and the PDF. Customers are told to send screenshots there, so any change is emailed (security priority) to `ALERT_EMAIL_TO` and audited (`settings.update` before/after). |
-| Waiting time | Default 48 h (`manual_tid_ttl_minutes` = 2880; migration 0006 changes the old 1440 default only). Recording the proof in admin moves the order to `PENDING_VERIFICATION`, which the expiry job never cancels. |
-
-### 23.2 Orders admin (M10 Phase A) — `src/server/orders/admin-orders.ts`, `/admin/orders`
-| Action | From → to | Notes |
-|---|---|---|
-| Record payment proof | prepaid `UNPAID` → `PENDING_VERIFICATION` | via WhatsApp / call / email / other; optional TID (unique across orders). Stops the 48 h expiry. |
-| Confirm payment | `UNPAID`/`PENDING_VERIFICATION` → `PAID`; `NEW` → `CONFIRMED` | requires the "I checked the statement" tick; payment row `SUCCEEDED`, `verified_by/at`; emails PAYMENT_CONFIRMED. |
-| Dispatch | `CONFIRMED`/`PACKED` (COD, or PAID) → `BOOKED` | courier (Leopards, PostEx, TCS, Trax, own rider) + CN; `shipments` row with COD amount; emails DISPATCHED with courier, CN and items. |
-| Cancel | `NEW`/`CONFIRMED`/`PACKED` → `CANCELLED` | reason required (customer sees it); stock back via `applyStockMovement(ORDER_CANCEL_RESTOCK)`, coupon use returned (shared `cancelOrderInTx`, also used by the expiry job); a PAID order needs "I will refund" and becomes `REFUNDED`; optional CANCELLED email. |
-All four run in one BEGIN IMMEDIATE transaction that re-reads the order, so a double click or two staff at once can only apply once; each writes `admin_audit_log` (`order.proof_received`, `order.payment_confirmed`, `order.dispatched`, `order.cancelled`). Module `orders` = OWNER, MANAGER (sidebar "Sales → Online orders"; dashboard banner with counts). Phase B (courier APIs, labels, COD remittance) stays in M10.
-
-### 23.3 Order details, private access and PDF
-| Topic | Rule |
-|---|---|
-| Who sees details | Only (a) the browser that placed the order, (b) a browser that opened the link in the order email, (c) someone who passes the order number + phone check on `/order`. Anyone else with the order number sees only number, total and method (Q39 unchanged). |
-| Token | 32 random bytes (base64url), valid 30 days; only its SHA-256 is stored (`order_access_tokens`). Kept in an httpOnly, SameSite=Lax (Secure in production) cookie per order; never returned to page JavaScript. Email link `/order/CODE/open?t=…` swaps the token for the cookie and redirects to the clean address (`no-store`, `no-referrer`), rate-limited. |
-| Page | Success page and `/order/CODE` show status, delivery details, items and totals, the payment steps and accounts (chosen method first), remark text with the order number, WhatsApp / call / email buttons, optional TID entry, courier + CN once dispatched. |
-| PDF | `GET /order/CODE/pdf` — cookie required (403 otherwise), `Cache-Control: no-store, private`; built server-side with pdf-lib (Helvetica; characters it can't draw become "?"). Contains the same details and payment steps. |
-
-### 23.4 Customer emails — `src/server/notify/order-emails.ts`
-Plain-text emails through `sendEmail()` (Gmail, §22), each written to `email_log` (kind, recipient, subject, SENT/FAILED/SKIPPED, detail, staff). ORDER_PLACED (items, totals, delivery, next steps, accounts, private link) + SALES_COPY (admin link, no customer token) are sent with `after()` once the order is saved — a slow or failed email never blocks or undoes an order. PAYMENT_CONFIRMED, DISPATCHED and CANCELLED come from admin actions; the result is shown to staff, and "Send again" is on the order page. Anti-abuse: at most 3 order-placed emails per address per Karachi day. Customer text is single-lined and control characters removed; subjects contain only the order number. Links use `BETTER_AUTH_URL` (never the request Host header) — set it to the real https address before going live (Shop settings warns while it is localhost).
-
-### 23.5 Home page 3D scenes and motion
-CSS only (no 3D library; only transform/opacity animate): **Inside a display assembly** — five layers separate and close again (repair section); **How we grade a screen** — three glowing panes turning (dark band, glow allowed); **What we stand for** — cards that tilt in 3D on hover/focus with floating icons. Each scene sits in `MotionScene`: plays by default, pauses off screen, has a pause/play button; under reduced motion it starts still and the shopper can press play (Q49). The hero carousel's pause button now also stops the phone turning. Measured: the home page's JavaScript grew by 268 bytes gzip over v1.10 (189,007 → 189,275 bytes). Note: the framework baseline (Next.js 16 + React 19 + existing client components) was already above the §12 100 KB target before v1.11 — tracked for M17 (performance).
-
-**Tests:** unit `tests/unit/orders-v111.test.ts` (tokens, hashing and expiry; payment steps; PDF; emails incl. daily cap, injection, site URL; admin flow, double clicks, expiry interplay, cancel with refund and coupon, TID uniqueness, lists), `checkout.test.ts` (email required, COD paused, tokens, 48 h), constitution checks (cookie check before details/PDF, httpOnly, no Host-header links). Browser (production build, fresh database): M6 34/34 (3 new: cashier kept out of Online orders), M7 33/33, M8 + v1.11 113/113 (55 new or changed for v1.11).
-
-## 24. v1.12 — Checkout: Cash on delivery or Pay in advance (2026-10-04)
-
-**Owner request:** "at the checkout the user should have the option to either select COD or choose Place Order and Wait for Payment Confirmation; give free shipment if the user pays in advance; if the user just places the order, inform them to share payment details within 24 hours via WhatsApp or email by sharing the payment slip and transaction details, along with the order number." Checked against the spec: changes Q51 (48 h → 24 h, recorded as Q52) and adds a delivery-fee rule (Q53); nothing else conflicts.
-
-| Topic | Rule |
-|---|---|
-| Payment step | Two cards: **Cash on delivery** (disabled with the reason when paused, over `COD_MAX_ORDER_PKR` or not available in the city; shows the owner's pause message) and **Place order & pay in advance** (badge "Free delivery"). Choosing pay in advance shows every live account (bank, JazzCash, …) to pick from, the "what happens next" steps, and an optional "Already paid? Add the transaction ID". The button reads "Place order & pay in advance · Rs …". |
-| Free delivery | `shipping_fee_paisa = 0` for bank / wallet orders while `prepaid_free_delivery` is on (Shop settings → "Free delivery when the customer pays in advance", default on, audited). Computed by `placeOrder` on the server; the review total must match or the order is refused (PRICE_CHANGED). Shown as "Free (paid in advance)" in the review, order page, emails and PDF. Product pages say "free delivery if you pay in advance". |
-| Customer instructions | Checkout, success/order page, order email and PDF: pay into the account, write the order number in the remarks, **within 24 hours send the payment slip (screenshot) and the transaction ID together with the order number by WhatsApp or email** (sales email); then the shop confirms the payment by email and dispatches; otherwise the order is cancelled after 24 hours. WhatsApp button pre-fills the order number and "Transaction ID:". |
-| Wait | Default `manual_tid_ttl_minutes` 1440 (24 h). Migration 0007 changes the v1.11 default 2880 only. Recording the proof in Online orders still stops the cancellation. |
-
-**Tests:** unit — free delivery for prepaid, COD still pays delivery, switch off charges delivery, stale total refused, 24 h default and expiry, new wording (162 tests). Browser (production build, fresh database): M8 + v1.11 + v1.12 117/117, M6 34/34, M7 33/33.
-

@@ -111,21 +111,15 @@ export function CartView({ storePhone, minDeliveryPaisa }: { storePhone: string 
           <CouponForm current={state.coupon} result={quote.coupon} />
 
           <div className="mt-6 border-t border-midnight/10 pt-6">
-            {quote.ready ? (
-              <ButtonLink href="/checkout" variant="urgent" size="lg" className="w-full">
-                Checkout
-              </ButtonLink>
-            ) : (
-              <button type="button" disabled className={buttonClasses("urgent", "lg", "w-full")}>
-                Checkout
-              </button>
-            )}
+            <button type="button" disabled className={buttonClasses("urgent", "lg", "w-full")}>
+              Checkout
+            </button>
             <p className="mt-3 text-sm text-midnight/70">
-              Cash on delivery, JazzCash, Easypaisa, NayaPay or bank transfer.
+              Online checkout with cash on delivery and JazzCash / Easypaisa opens very soon.
               {storePhone ? (
                 <>
                   {" "}
-                  Questions? Call{" "}
+                  To order now, call{" "}
                   <a href={`tel:${storePhone.replace(/[^+\d]/g, "")}`} className="font-semibold underline underline-offset-4">
                     {storePhone}
                   </a>
