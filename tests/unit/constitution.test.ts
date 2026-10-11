@@ -156,3 +156,11 @@ describe("§0.4 rule 5 — .env.example documents every key the app reads", () =
     expect(read(".env.example")).toMatch(/^COD_MAX_ORDER_PKR=20000$/m);
   });
 });
+
+describe("§5 migrations", () => {
+  it("each migration's timestamp is later than the one before (Drizzle skips an older one on an existing database)", () => {
+    const journal = JSON.parse(read("drizzle/meta/_journal.json")) as { entries: { idx: number; when: number; tag: string }[] };
+    const out = journal.entries.filter((e, i) => i > 0 && e.when <= journal.entries[i - 1]!.when).map((e) => e.tag);
+    expect(out).toEqual([]);
+  });
+});

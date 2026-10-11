@@ -1,11 +1,11 @@
-# Caidea — handoff notes (as of v1.12, 2026-10-04)
+# Caidea — handoff notes (as of v1.13, 2026-10-04)
 
-Read this first in a new chat, then SPECIFICATION.md (v1.12), BUILD_GUIDE.md and CLARIFICATIONS.md.
+Read this first in a new chat, then SPECIFICATION.md (v1.13), BUILD_GUIDE.md and CLARIFICATIONS.md.
 
 ## Where the build stands
-- Done: Milestones 1–8 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 Phase A (Online orders admin, v1.11)**.
-- Next: **Milestone 9 — counter sale (POS)** (BUILD_GUIDE.md; see the "For M9" note under M8). M10 Phase B (courier APIs) after that.
-- Last delivered: `caidea-v1.12.zip` (§24: checkout = Cash on delivery or Place order & pay in advance; free delivery when paying in advance; payment slip + transaction ID within 24 h by WhatsApp/email). The zip has no `.git` folder; commit it in your own copy as `v1.12: COD or pay in advance at checkout, free delivery, 24 h payment slip`.
+- Done: Milestones 1–9 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, Milestone 10 Phase A (Online orders admin, v1.11).
+- Next: **Milestone 10 Phase B** — PACKED / IN_TRANSIT / DELIVERED steps, courier adapters (Leopards, PostEx) when API keys arrive, labels, COD remittance. Then M11 Returns (must also handle counter sales — see BUILD_GUIDE "For M11" under M9).
+- Last delivered: `caidea-v1.13.zip` (§25: Milestone 9 counter sale). The zip has no `.git` folder; commit it in your own copy as `v1.13: M9 counter sale (POS), end of day, technicians`.
 - Go-live checklist (shared doc, tick as you go): https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e
 
 ## Stack
@@ -32,6 +32,9 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - v1.11 (owner, §23; answers Q48–Q51): email required at checkout; above the COD limit or while COD is **paused** (Shop settings switch + message) customers order by bank / wallet, pay with the order number in the remarks and send the screenshot (WhatsApp / call / **sales email** setting); staff record the proof (stops expiry), confirm payment, dispatch with CN, or cancel in **Admin → Online orders** (OWNER/MANAGER, audited, idempotent; cancel uses the stock engine). Payment wait 48 h. Customer emails (order placed + sales copy after commit; payment confirmed / dispatched / cancelled from admin) through `sendEmail`, logged in `email_log`, max 3 order emails/address/day. Full order details + server-side PDF (pdf-lib) only with the private token: random 30-day token, SHA-256 stored in `order_access_tokens`, httpOnly cookie + email link (`/order/CODE/open?t=`). CSS-3D scenes on the last three home sections inside `MotionScene` (pause button, off-screen pause, reduced motion starts still).
 - v1.12 (owner, §24; Q52–Q53): checkout payment step = **Cash on delivery** or **Place order & pay in advance** (then pick the account). Pay-in-advance orders get **free delivery** (`prepaid_free_delivery`, Shop settings, default on; computed in `placeOrder`). Customers are told to send the payment slip + transaction ID with the order number within **24 hours** by WhatsApp or email (wait is 24 h again; migration 0007).
 
+- v1.13 (M9, §25; Q54–Q61): **Admin → Counter sale** (keyboard/scanner till, 80 mm receipt sized to its length, auto-print), **End of day** (per cashier, cash in drawer), **Technicians** (approve for wholesale). Owner rules: **cashiers and managers take cash only** (cash received → change); **only the OWNER** takes JazzCash / Easypaisa / bank / card with a transaction ID + "genuine and checked" tick (unique across all orders, card slips stored as `CARD-…`); **manager/owner ticket discount** with a reason; wholesale only for APPROVED technicians (manager/owner approve; cashier registrations wait). Counter codes `CA-POS-YYMMDD-NNNN`; `COUNTER_POS` with the cashier as operator; counter prices = website price (sale + promotions), wholesale never above it; unpublished (not archived) stock can be sold. Logic in `src/server/counter/pos.ts`; modules `counter`, `technicians`; migration 0008 adds `orders.cash_received_paisa`, `orders.discount_reason`. No void/refund of a counter sale yet (M11).
+- Migration timestamps: Drizzle skips a migration whose `when` is older than the last applied one. 0007 was stamped ahead of real time, so 0008 is stamped after it; `tests/unit/constitution.test.ts` now fails if the order is ever wrong. When you generate 0009, check its `when` in `drizzle/meta/_journal.json` is larger than 0008's (`1791187967456`), or bump it.
+
 ## Working rules from the owner
 - Before any change, check it against the specification; if it conflicts, offer options and apply the owner's choice.
 - After changes, confirm nothing that worked before is broken (unit tests, `npm run db:verify`, lint, typecheck, build, browser tests).
@@ -49,7 +52,11 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Set the **sales email** and WhatsApp in Shop settings, and on the live server set `BETTER_AUTH_URL` to the real https address (email links use it; Shop settings warns while it's localhost).
 - Performance note: the home page's JavaScript is ~185 KB gzip, mostly the Next.js/React framework, which was already over the §12 100 KB target before v1.11 (v1.11 added 268 bytes). Review in M17.
 - Schedule `/api/cron/expire-unpaid` (e.g. every 15 min) when the shop server is set up (M18).
+- (v1.13) Counter: decide whether managers should also take wallet/card payments (currently owner only, per your answer), set up the receipt printer on the till PC (80 mm roll; `--kiosk-printing` for no dialog), create a CASHIER login for each person at the till, register your regular technicians. Undo/refund of a counter sale comes with M11 Returns.
 - Before go-live: enter real opening stock by counting each colour (product page → Count or correct stock) or with the CSV `opening_stock` column.
+
+## Upgrading an existing copy to v1.13
+From v1.12: `npm install` → `npm run db:migrate` (migration 0008 adds two order columns; backs up first) → `npm test` → `npm run db:verify` → `npm run build` → restart. Then: sign in as owner/manager → Admin → Technicians (add your regular repair technicians) → Admin → Counter sale (try one cash sale, check the receipt prints on the 80 mm printer — printer notes in BUILD_GUIDE M9). Staff need role CASHIER for the till (`npm run staff:create -- --role CASHIER`). From v1.11 or older, do the v1.12 steps below first.
 
 ## Upgrading an existing copy to v1.12
 From v1.11: `npm install` → `npm run db:migrate` (migration 0007 sets the payment wait back to 24 h unless you changed it) → `npm test` → `npm run build` → restart → Admin → Shop settings: check "Free delivery when the customer pays in advance" and the waiting time. From v1.10: do the v1.11 steps below first.

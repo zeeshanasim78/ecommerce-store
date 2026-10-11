@@ -165,3 +165,16 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q52 | How long does a pay-in-advance customer have to send payment details? (replaces Q51) | **24 hours** — payment slip + transaction ID + order number by WhatsApp or email. "Proof received" in admin still stops the cancellation. |
 | Q53 | Delivery fee when the customer pays in advance? | **Free** (owner request). Switch in Shop settings, on by default; COD orders still pay delivery and the COD fee. |
 
+## N. Counter sale / POS (2026-10-04) — answered (Q54–Q56) and ★ defaults (Q57–Q61)
+
+| Q | Question | Decision |
+|---|---|---|
+| Q54 | Which payments can staff take at the counter? | **Cashiers and other staff: cash only** — enter the cash received, the system shows the change. **Only the owner** takes JazzCash / Easypaisa / bank transfer / card, entering the transaction ID and confirming it is genuine and checked (owner answer). |
+| Q55 | Extra discounts at the counter? | **Manager discount**: a manager or the owner can take a rupee amount off the whole ticket, with a reason (owner answer). |
+| Q56 | Who gets wholesale prices at the counter? | **Approved technicians**, found by mobile number. A manager/owner can register + approve at the till; a cashier's registration waits for approval (retail prices meanwhile). Admin → Technicians to approve/reject (owner answer). |
+| Q57 | Counter retail price | ★ Same as the website (sale price and promotions); wholesale never above that day's retail. |
+| Q58 | Can the counter sell screens not published online? | ★ Yes, unless archived. |
+| Q59 | Counter sale numbers | ★ `CA-POS-YYMMDD-NNNN`, separate from online `CA-ORD-…`. |
+| Q60 | Who sees which counter sales? | ★ Cashiers: their own sales, receipts and end of day. Managers and the owner: everyone's. |
+| Q61 | Undo a counter sale | ★ Not in M9 — returns and refunds come with M11 (Returns); until then a manager can correct stock on the product page. |
+

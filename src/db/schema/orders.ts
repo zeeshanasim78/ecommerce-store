@@ -96,6 +96,10 @@ export const orders = sqliteTable(
     cancelReason: text("cancel_reason"),
     createdBy: text("created_by").references(() => user.id),
     notes: text("notes"),
+    /** v1.13 (M9): cash the customer handed over at the counter; change = this − total. */
+    cashReceivedPaisa: integer("cash_received_paisa"),
+    /** v1.13 (M9): why a manager/owner took money off a counter ticket. */
+    discountReason: text("discount_reason"),
   },
   (t) => [
     check("orders_channel", inList("channel", ORDER_CHANNELS)),

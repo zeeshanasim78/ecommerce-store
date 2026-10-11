@@ -345,6 +345,12 @@ Keyboard-first screen: SKU/barcode input (USB scanners type like a keyboard + En
 
 **Done when:** a sale completes in under 10 seconds with keyboard only; receipt prints; ledger shows `COUNTER_POS` with the cashier as operator.
 
+> ✅ **Built (2026-10-04, v1.13).** Admin → Sales: **Counter sale**, **End of day**, **Technicians**. Rules in SPECIFICATION.md §25; logic in `src/server/counter/pos.ts` (24 unit tests). Owner decisions: cashiers take cash only; only the owner records JazzCash / Easypaisa / bank / card with a confirmed transaction ID; managers/owner can discount a ticket; wholesale for approved technicians (CLARIFICATIONS Q54–Q61). Checked in a production build: keyboard-only sale in 0.3 s, receipt auto-printed on an 80 mm page, `COUNTER_POS` with the cashier as operator, website "Out of stock" 0.45 s after the last unit sold at the counter.
+>
+> **Receipt printer setup (shop PC):** install the printer's driver with 80 mm roll paper; in Chrome's print dialog choose the printer and Margins "Default". For printing without the dialog, start Chrome on the till PC with `--kiosk-printing` (prints straight to the default printer). The till's "Print the receipt automatically" switch is remembered per browser.
+>
+> **For M11:** a counter sale is returned like an online one — `orders.channel = 'COUNTER'`, items carry `warranty_until`; restock with `REPAIR_RETURN`. **For M12:** cashier totals = `counterDaySummary()`; counter COGS from `order_items.unit_cost_paisa`.
+
 ---
 
 ## Milestone 10 — Orders admin & couriers *(3–4 days, + API work when keys arrive)* — Spec §9

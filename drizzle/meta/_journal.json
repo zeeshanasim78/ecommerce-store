@@ -57,6 +57,13 @@
       "when": 1791101567456,
       "tag": "0007_v1_12_prepaid_24h",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791187967456,
+      "tag": "0008_v1_13_counter_sale",
+      "breakpoints": true
     }
   ]
 }

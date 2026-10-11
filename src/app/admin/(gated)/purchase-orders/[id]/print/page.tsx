@@ -4,7 +4,7 @@ import { PAYMENT_TERMS_LABEL, PO_STATUS_LABEL, formatForeign } from "@/component
 import { formatKarachi } from "@/lib/time";
 import { requireStaff } from "@/server/dal";
 import { loadPurchaseOrder } from "../load";
-import { PrintButton } from "./print-button";
+import { PrintButton } from "@/components/admin/print-button";
 
 export const metadata = { title: "Print purchase order" };
 

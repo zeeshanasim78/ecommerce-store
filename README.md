@@ -31,7 +31,10 @@ Pages not built yet (About, Contact, Terms, FAQs) show "We couldn't find that pa
 
 | Screen | Who | What |
 |---|---|---|
-| Dashboard | All staff | Counts and the low-stock list |
+| Dashboard | All staff | Counter takings today (cashiers: their own), online orders waiting, counts and the low-stock list |
+| Counter sale (v1.13) | Owner, Manager, Cashier | The shop till: scan a barcode or type a SKU/model + Enter (`3*SKU` adds three), take the cash, see the change, print an 80 mm receipt. Keys: F2 search · F4 cash · F6 customer · F9 or Ctrl+Enter complete · Enter new sale. **Cashiers and managers take cash only; only the owner can take JazzCash / Easypaisa / bank / card**, by typing the transaction ID and confirming it's genuine. Managers and the owner can take a rupee discount off a ticket (reason required). Wholesale prices for approved technicians found by mobile number |
+| End of day (v1.13) | Owner, Manager, Cashier | Any day's counter sales per cashier: sales, items, cash in drawer, by payment method, wholesale and discounts; each receipt can be reprinted. Cashiers see only their own |
+| Technicians (v1.13) | Owner, Manager | Repair technicians who get wholesale prices: approve or reject those registered at the till, add new ones |
 | Hero carousel | Owner, Manager, Content editor | Add, edit, reorder, show/hide and delete up to 5 live slides (text, Markdown description, button, 3D product screen or image upload). Each slide has a **Look**: colour theme (Midnight, Terracotta, Amber, Cream, Dusk) and phone size/position. The 3D phone takes the shape of the linked product's model |
 | Home page | Owner, Manager, Content editor | The “Caidea in numbers” figures (up to 6) and the screen-change video (upload MP4/WebM up to 20 MB and a still image, edit the caption, or go back to the built-in animation) |
 | Products | Owner, Manager | Details, PKR prices, sale price with start/end time, category, feature tags, Published / Featured / Featured on Hero switches, photo gallery (upload, angle, colour, reorder, delete), add colours, archive |

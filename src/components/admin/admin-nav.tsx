@@ -9,7 +9,15 @@ type Item = { href: string; label: string; module?: AdminModule; milestone?: str
 
 const GROUPS: { heading: string; items: Item[] }[] = [
   { heading: "Overview", items: [{ href: "/admin/dashboard", label: "Dashboard", module: "dashboard" }] },
-  { heading: "Sales", items: [{ href: "/admin/orders", label: "Online orders", module: "orders" }] },
+  {
+    heading: "Sales",
+    items: [
+      { href: "/admin/counter-sale", label: "Counter sale", module: "counter" },
+      { href: "/admin/counter-sale/summary", label: "End of day", module: "counter" },
+      { href: "/admin/orders", label: "Online orders", module: "orders" },
+      { href: "/admin/technicians", label: "Technicians", module: "technicians" },
+    ],
+  },
   {
     heading: "Storefront",
     items: [
@@ -39,7 +47,6 @@ const GROUPS: { heading: string; items: Item[] }[] = [
   {
     heading: "Coming next",
     items: [
-      { href: "#", label: "Counter sale", milestone: "M9" },
       { href: "#", label: "Returns", milestone: "M11" },
       { href: "#", label: "Reports", milestone: "M12" },
       { href: "#", label: "Blog & testimonials", milestone: "M13" },
@@ -47,8 +54,15 @@ const GROUPS: { heading: string; items: Item[] }[] = [
   },
 ];
 
+const ALL_HREFS = GROUPS.flatMap((g) => g.items.map((i) => i.href)).filter((h) => h !== "#");
+/** The most specific menu item for this address ("/admin/counter-sale/summary" is not also "Counter sale"). */
+function activeHref(path: string | null): string | null {
+  if (!path) return null;
+  return ALL_HREFS.filter((h) => path === h || path.startsWith(`${h}/`)).sort((a, b) => b.length - a.length)[0] ?? null;
+}
+
 export function AdminNav({ role }: { role: StaffRole }) {
-  const current = usePathname();
+  const active = activeHref(usePathname());
   return (
     <nav aria-label="Admin" className="flex flex-col gap-7">
       {GROUPS.map((group) => {
@@ -68,10 +82,10 @@ export function AdminNav({ role }: { role: StaffRole }) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      aria-current={current?.startsWith(item.href) ? "page" : undefined}
+                      aria-current={active === item.href ? "page" : undefined}
                       className={cn(
                         "block rounded-full px-4 py-2 text-[0.9375rem] font-medium transition-colors",
-                        current?.startsWith(item.href) ? "bg-midnight text-canvas" : "hover:bg-midnight/6",
+                        active === item.href ? "bg-midnight text-canvas" : "hover:bg-midnight/6",
                       )}
                     >
                       {item.label}

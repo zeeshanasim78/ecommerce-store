@@ -9,6 +9,8 @@ import { coupons, heroSlides, productVariants, products, promotions } from "@/db
 import { PaymentAlert } from "@/components/admin/payment-alert";
 import { canAccess, requireStaff } from "@/server/dal";
 import { getPaymentAlert } from "@/server/settings/payment-integrity";
+import { counterDaySummary, karachiDate, listTechnicians } from "@/server/counter/pos";
+import { formatMoney } from "@/lib/money";
 
 export const metadata = { title: "Dashboard" };
 
@@ -20,6 +22,8 @@ const DENIED: Record<string, string> = {
   purchasing: "Your role can’t manage purchase orders.",
   ledger: "Your role can’t open the stock ledger.",
   orders: "Your role can’t manage online orders.",
+  counter: "Your role can’t use the counter till.",
+  technicians: "Only a manager or the owner can approve technicians.",
   settings: "Only the owner can change shop settings.",
 };
 
@@ -33,6 +37,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const one = (q: { n: number }[]) => q[0]?.n ?? 0;
   // v1.11: online orders waiting for staff (payment proof to check, or ready to dispatch)
   const ordersToDo = canAccess(staff.role, "orders") ? orderCounts(db) : null;
+  // v1.13 (M9): today's counter takings — a cashier sees only their own (spec §7 Dashboard)
+  const counterToday = canAccess(staff.role, "counter") ? counterDaySummary(db, { date: karachiDate(new Date()), cashierId: canAccess(staff.role, "technicians") ? undefined : staff.id }).all : null;
+  const techniciansWaiting = canAccess(staff.role, "technicians") ? listTechnicians(db, { status: "PENDING" }).length : 0;
   const stats = [
     { label: "Published products", value: one(db.select({ n: count() }).from(products).where(and(eq(products.isPublished, true), isNull(products.archivedAt))).all()), href: "/admin/products" },
     { label: "Active hero slides", value: one(db.select({ n: count() }).from(heroSlides).where(eq(heroSlides.isActive, true)).all()), href: "/admin/hero" },
@@ -65,7 +72,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <AdminHeader title={`Welcome, ${staff.name.split(" ")[0]}`} description="Storefront content and catalogue at a glance. Order and sales figures arrive with the Orders screen in Milestone 10." />
+      <AdminHeader title={`Welcome, ${staff.name.split(" ")[0]}`} description="Today at the counter, online orders waiting, storefront content and low stock at a glance." />
       {denied && DENIED[denied] ? <Notice tone="error">{DENIED[denied]}</Notice> : null}
       {ordersToDo && ordersToDo.action + ordersToDo.payment > 0 ? (
         <Link href="/admin/orders" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-bezel bg-midnight px-6 py-4 font-medium text-canvas">
@@ -74,6 +81,28 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <span className="tabular">{ordersToDo.payment} waiting for payment</span>
           <span className="ml-auto underline underline-offset-4">Open orders</span>
         </Link>
+      ) : null}
+      {counterToday ? (
+        <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-bezel bg-white px-6 py-4 ring-1 ring-midnight/8">
+          <span className="font-semibold">Counter today{canAccess(staff.role, "technicians") ? "" : " (your sales)"}</span>
+          <span className="tabular">
+            {counterToday.sales} sale{counterToday.sales === 1 ? "" : "s"} · {formatMoney(counterToday.totalPaisa)}
+          </span>
+          <span className="tabular text-midnight/70">Cash {formatMoney(counterToday.cashPaisa)}</span>
+          {techniciansWaiting > 0 && (
+            <Link href="/admin/technicians?status=PENDING" className="font-semibold text-terracotta underline underline-offset-4">
+              {techniciansWaiting} technician{techniciansWaiting === 1 ? "" : "s"} waiting for approval
+            </Link>
+          )}
+          <span className="ml-auto flex gap-4">
+            <Link href="/admin/counter-sale/summary" className="underline underline-offset-4">
+              End of day
+            </Link>
+            <Link href="/admin/counter-sale" className="font-semibold underline underline-offset-4">
+              Open the till
+            </Link>
+          </span>
+        </div>
       ) : null}
       {paymentAlert ? <PaymentAlert alert={paymentAlert} showLink={canAccess(staff.role, "settings")} /> : null}
 
