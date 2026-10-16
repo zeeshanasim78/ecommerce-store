@@ -1,0 +1,23 @@
+====================================
+NPM Commands to setup environment , execute check and then build
+====================================
+After extracting zip file go to caidea folder
+execute following commands
+npm ci
+npm run setup:env
+npm run db:setup
+npm run staff:create -- --email owner@caidea.test --name "Test Owner" --role OWNER    
+
+--- PAssword may be set to :  123456789012
+
+Run the automated checks
+
+npm test
+npm run lint
+npm run typecheck
+npm run db:verify
+
+Build and Start
+
+npm run build
+npm start

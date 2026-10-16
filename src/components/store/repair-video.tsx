@@ -1,29 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { HomeVideo } from "@/db/home-defaults";
-
-const REDUCED = "(prefers-reduced-motion: reduce)";
-const subscribe = (cb: () => void) => {
-  const mq = window.matchMedia(REDUCED);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-};
 
 /**
  * The 6-second repair video (spec §16). Muted, looping and inline so phones autoplay it;
- * it only loads when scrolled near (keeps the home page fast on mobile data), shows its
- * poster under reduced motion, and has a visible pause/play button (WCAG 2.2.2).
+ * it only loads when scrolled near (keeps the home page fast on mobile data) and rests while off
+ * screen. v1.14 (Q63): plays on every device, also with "reduce motion" on, until the shopper presses
+ * the pause button (WCAG 2.2.2).
  */
 export function RepairVideo({ video }: { video: HomeVideo }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const reduce = useSyncExternalStore(subscribe, () => window.matchMedia(REDUCED).matches, () => true);
   const [playing, setPlaying] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || reduce || userPaused) return;
+    if (!el || userPaused) return;
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) el.play().catch(() => undefined);
@@ -33,7 +26,7 @@ export function RepairVideo({ video }: { video: HomeVideo }) {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [reduce, userPaused]);
+  }, [userPaused]);
 
   const toggle = () => {
     const el = ref.current;

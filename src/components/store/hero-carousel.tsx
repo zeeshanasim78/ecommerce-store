@@ -17,15 +17,8 @@ export type HeroSlideContent = {
   theme: HeroTheme; // v1.3: per-slide background and text colours
 };
 
-const SLIDE_MS = 4000; // spec §0.3.1a: advance every 4 seconds
+const SLIDE_MS = 8000; // v1.14 owner decision (Q62): 8 seconds per slide, room for one slow phone animation
 
-const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
-function subscribeReducedMotion(onChange: () => void) {
-  const mq = window.matchMedia(REDUCED_MOTION);
-  mq.addEventListener("change", onChange);
-  return () => mq.removeEventListener("change", onChange);
-}
-const getReducedMotion = () => window.matchMedia(REDUCED_MOTION).matches;
 function subscribeVisibility(onChange: () => void) {
   document.addEventListener("visibilitychange", onChange);
   return () => document.removeEventListener("visibilitychange", onChange);
@@ -36,23 +29,21 @@ function subscribeVisibility(onChange: () => void) {
  * - Each slide has its own theme; backgrounds cross-fade and the controls follow the active theme.
  * - Timing is a CSS animation on the active progress bar; when it ends, the next slide shows.
  *   Pausing just pauses that animation, so the bar and the timer can never drift apart.
- * - Pauses on hover, on keyboard focus, when the tab is hidden, and by the play/pause button.
- * - Starts paused for people who prefer reduced motion (WCAG 2.2.2).
+ * - v1.14 owner decision (Q63): plays automatically on every device and keeps playing — also under the
+ *   mouse, with keyboard focus and with "reduce motion" on — until the shopper presses pause
+ *   (WCAG 2.2.2 is met by that button). It only rests while the browser tab is hidden.
  */
 export function HeroCarousel({ slides }: { slides: HeroSlideContent[] }) {
   const [active, setActive] = useState(0);
-  // null = the shopper hasn't pressed play/pause; then reduced-motion decides
-  const [userPaused, setUserPaused] = useState<boolean | null>(null);
-  const [hoverPaused, setHoverPaused] = useState(false);
-  const reduceMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotion, () => false);
+  const [userPaused, setUserPaused] = useState(false);
   const hidden = useSyncExternalStore(subscribeVisibility, () => document.hidden, () => false);
   const rootRef = useRef<HTMLElement>(null);
   const frame = useRef(0);
   const count = slides.length;
 
   const go = useCallback((i: number) => setActive(((i % count) + count) % count), [count]);
-  const manuallyPaused = userPaused ?? reduceMotion;
-  const paused = manuallyPaused || hoverPaused || hidden || count < 2;
+  const manuallyPaused = userPaused;
+  const paused = manuallyPaused || hidden || count < 2;
 
   // Pointer tilt for the 3D phone: write CSS variables once per animation frame
   const onPointerMove = (e: React.PointerEvent) => {
@@ -84,20 +75,12 @@ export function HeroCarousel({ slides }: { slides: HeroSlideContent[] }) {
       ref={rootRef}
       aria-roledescription="carousel"
       aria-label="Featured screens"
-      className="hero-root relative isolate overflow-hidden bg-midnight"
-      // v1.11: the pause button also stops the phone turning; pressing play overrides reduced motion
+      aria-live="off"
+      className="hero-root motion-always relative isolate overflow-hidden bg-midnight"
+      // the pause button also stops the phone
       data-paused={manuallyPaused ? "true" : undefined}
-      data-user-play={userPaused === false ? "true" : undefined}
-      onMouseEnter={() => setHoverPaused(true)}
-      onMouseLeave={() => {
-        setHoverPaused(false);
-        resetTilt();
-      }}
+      onMouseLeave={resetTilt}
       onPointerMove={onPointerMove}
-      onFocus={() => setHoverPaused(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHoverPaused(false);
-      }}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") go(active + 1);
         if (e.key === "ArrowLeft") go(active - 1);
@@ -110,7 +93,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlideContent[] }) {
           <div
             key={`bg-${slide.id}`}
             aria-hidden="true"
-            className={cn("absolute inset-0 -z-10 transition-opacity duration-700", i === active ? "opacity-100" : "opacity-0")}
+            className={cn("absolute inset-0 -z-10 transition-opacity duration-1000", i === active ? "opacity-100" : "opacity-0")}
             style={{ background: t.background }}
           >
             {/* Ambient glow only on dark themes (glass-on-dark rule, spec §0.2) */}
@@ -133,7 +116,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlideContent[] }) {
               data-active={isActive}
               inert={!isActive}
               className={cn(
-                "grid items-center gap-2 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] [grid-area:stack] lg:grid-cols-[1.05fr_1fr] lg:gap-10",
+                "grid items-center gap-2 transition-[opacity,transform] duration-1000 ease-[cubic-bezier(0.2,0.7,0.2,1)] [grid-area:stack] lg:grid-cols-[1.05fr_1fr] lg:gap-10",
                 isActive ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-6 opacity-0",
               )}
             >

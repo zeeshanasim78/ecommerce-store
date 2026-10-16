@@ -1,11 +1,11 @@
-# Caidea — handoff notes (as of v1.13, 2026-10-04)
+# Caidea — handoff notes (as of v1.14, 2026-10-16)
 
-Read this first in a new chat, then SPECIFICATION.md (v1.13), BUILD_GUIDE.md and CLARIFICATIONS.md.
+Read this first in a new chat, then SPECIFICATION.md (v1.14), BUILD_GUIDE.md and CLARIFICATIONS.md.
 
 ## Where the build stands
 - Done: Milestones 1–9 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, Milestone 10 Phase A (Online orders admin, v1.11).
 - Next: **Milestone 10 Phase B** — PACKED / IN_TRANSIT / DELIVERED steps, courier adapters (Leopards, PostEx) when API keys arrive, labels, COD remittance. Then M11 Returns (must also handle counter sales — see BUILD_GUIDE "For M11" under M9).
-- Last delivered: `caidea-v1.13.zip` (§25: Milestone 9 counter sale). The zip has no `.git` folder; commit it in your own copy as `v1.13: M9 counter sale (POS), end of day, technicians`.
+- Last delivered: `caidea-v1.14.zip` (§26: slower hero phones, per-phone motions, merging five-layer scene, always-play hero and repair section). The zip has no `.git` folder; commit it in your own copy as `v1.14: slow per-phone hero animations, merging layers, always-play`. (v1.13 = M9 counter sale, §25.)
 - Go-live checklist (shared doc, tick as you go): https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e
 
 ## Stack
@@ -33,6 +33,7 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - v1.12 (owner, §24; Q52–Q53): checkout payment step = **Cash on delivery** or **Place order & pay in advance** (then pick the account). Pay-in-advance orders get **free delivery** (`prepaid_free_delivery`, Shop settings, default on; computed in `placeOrder`). Customers are told to send the payment slip + transaction ID with the order number within **24 hours** by WhatsApp or email (wait is 24 h again; migration 0007).
 
 - v1.13 (M9, §25; Q54–Q61): **Admin → Counter sale** (keyboard/scanner till, 80 mm receipt sized to its length, auto-print), **End of day** (per cashier, cash in drawer), **Technicians** (approve for wholesale). Owner rules: **cashiers and managers take cash only** (cash received → change); **only the OWNER** takes JazzCash / Easypaisa / bank / card with a transaction ID + "genuine and checked" tick (unique across all orders, card slips stored as `CARD-…`); **manager/owner ticket discount** with a reason; wholesale only for APPROVED technicians (manager/owner approve; cashier registrations wait). Counter codes `CA-POS-YYMMDD-NNNN`; `COUNTER_POS` with the cashier as operator; counter prices = website price (sale + promotions), wholesale never above it; unpublished (not archived) stock can be sold. Logic in `src/server/counter/pos.ts`; modules `counter`, `technicians`; migration 0008 adds `orders.cash_received_paisa`, `orders.discount_reason`. No void/refund of a counter sale yet (M11).
+- v1.14 (§26; Q62–Q64): hero slides 8 s; five slow phone motions (assemble = screen placed onto the phone's base, turn, float, rise, sway) in `globals.css` `pm-*`, picked per model in `device-profiles.ts` (`assignMotions`, `deviceProfileForSlide` — reads the slide text when no product is linked); five-layer scene starts apart and merges (12 s); hero, repair video and layers scene always play until paused (`.motion-always` is skipped by the global reduced-motion rule). No schema change, no new dependency.
 - Migration timestamps: Drizzle skips a migration whose `when` is older than the last applied one. 0007 was stamped ahead of real time, so 0008 is stamped after it; `tests/unit/constitution.test.ts` now fails if the order is ever wrong. When you generate 0009, check its `when` in `drizzle/meta/_journal.json` is larger than 0008's (`1791187967456`), or bump it.
 
 ## Working rules from the owner
@@ -54,6 +55,9 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Schedule `/api/cron/expire-unpaid` (e.g. every 15 min) when the shop server is set up (M18).
 - (v1.13) Counter: decide whether managers should also take wallet/card payments (currently owner only, per your answer), set up the receipt printer on the till PC (80 mm roll; `--kiosk-printing` for no dialog), create a CASHIER login for each person at the till, register your regular technicians. Undo/refund of a counter sale comes with M11 Returns.
 - Before go-live: enter real opening stock by counting each colour (product page → Count or correct stock) or with the CSV `opening_stock` column.
+
+## Upgrading an existing copy to v1.14
+From v1.13: replace the files → `npm install` → `npm test` → `npm run build` → restart. No database change.
 
 ## Upgrading an existing copy to v1.13
 From v1.12: `npm install` → `npm run db:migrate` (migration 0008 adds two order columns; backs up first) → `npm test` → `npm run db:verify` → `npm run build` → restart. Then: sign in as owner/manager → Admin → Technicians (add your regular repair technicians) → Admin → Counter sale (try one cash sale, check the receipt prints on the 80 mm printer — printer notes in BUILD_GUIDE M9). Staff need role CASHIER for the till (`npm run staff:create -- --role CASHIER`). From v1.11 or older, do the v1.12 steps below first.

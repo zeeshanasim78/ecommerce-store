@@ -4,6 +4,7 @@ import { HeroCarousel, type HeroSlideContent } from "@/components/store/hero-car
 import { RepairVideo } from "@/components/store/repair-video";
 import { SafeMarkdown } from "@/components/store/markdown";
 import { Phone3D } from "@/components/store/phone-3d";
+import { assignMotions, deviceProfileForSlide } from "@/components/store/device-profiles";
 import { ExplodedPhone, GradeRing, ValueCards } from "@/components/store/scenes-3d";
 import { GradeBadge } from "@/components/ui/badge";
 import { Container, SectionDark } from "@/components/ui/card";
@@ -81,7 +82,13 @@ export default function HomePage() {
   const stats = getHomeStats();
   const video = getHomeVideo();
   const dbSlides = getHeroSlides();
-  const slides: HeroSlideContent[] = (dbSlides.length ? dbSlides : [FALLBACK_SLIDE]).map((s) => ({
+  // v1.14: each slide draws the phone it talks about, and each phone moves differently (Q64)
+  const heroSource = dbSlides.length ? dbSlides : [FALLBACK_SLIDE];
+  const slideText = (s: (typeof heroSource)[number]) => `${s.heading} ${s.subheading ?? ""}`;
+  const motions = assignMotions(
+    heroSource.map((s) => deviceProfileForSlide(s.product ? { brand: s.product.brand, model: s.product.model, colour: s.product.variants[0]?.color } : null, slideText(s))),
+  );
+  const slides: HeroSlideContent[] = heroSource.map((s, i) => ({
     id: s.id,
     heading: s.heading,
     subheading: s.subheading,
@@ -94,6 +101,8 @@ export default function HomePage() {
         product={s.product}
         imageUrl={s.visualType === "IMAGE" ? s.visualUrl : null}
         layout={s.phoneLayout}
+        slideText={slideText(s)}
+        motion={motions[i]}
         label={s.product ? `${s.product.brand} ${s.product.model} ${s.product.qualityGrade} screen` : "Phone display assembly"}
       />
     ),

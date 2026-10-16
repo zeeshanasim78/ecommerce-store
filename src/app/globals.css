@@ -71,9 +71,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  /* v1.14 owner decision (Q63): the hero and "Changing a screen, explained" always play until the
+     shopper presses pause, so they are left out of this rule (marked .motion-always). */
+  :where(*:not(.motion-always, .motion-always *)),
+  :where(*:not(.motion-always, .motion-always *))::before,
+  :where(*:not(.motion-always, .motion-always *))::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
@@ -125,58 +127,146 @@
   will-change: transform;
 }
 
-/* v1.3: once per 4-second slide — front, a turn to show this model's rear cameras, then front again. */
-@keyframes phone-turn {
-  0% {
-    transform: rotateY(-24deg) rotateX(5deg);
-  }
-  35% {
-    transform: rotateY(14deg) rotateX(-2deg);
-  }
-  55% {
-    transform: rotateY(168deg) rotateX(2deg);
-  }
-  72% {
-    transform: rotateY(198deg) rotateX(4deg);
-  }
-  100% {
-    transform: rotateY(336deg) rotateX(5deg);
-  }
-}
-
+/*
+ * v1.14 (owner request): slow, smooth phone motion — one 8-second cycle per slide (the slide time,
+ * Q62), different for each phone (Q64). Every cycle starts and ends on the same pose, eased at both
+ * ends, so it loops without a jump. Only transform/opacity animate (GPU-composited).
+ *   assemble  the display floats in front of the phone's base, then is lowered onto it and lights up
+ *   turn      one slow turn on the vertical axis, showing the rear cameras halfway
+ *   float     a gentle hover: rising, settling and tilting
+ *   rise      lying flat, slowly standing up to face you, then lying down again
+ *   sway      a slow pendulum swing
+ */
 @utility phone-body {
   transform-style: preserve-3d;
   transform: rotateY(-18deg) rotateX(4deg);
   will-change: transform;
 }
-
-/* Only the visible slide animates; adding the animation when a slide becomes active restarts it from the front. */
-[data-active="true"] .phone-body {
-  animation: phone-turn 4s cubic-bezier(0.45, 0.05, 0.35, 1) infinite;
+.phone-front {
+  transform-style: preserve-3d;
+}
+.phone-glow {
+  opacity: 1;
+}
+@keyframes pm-assemble-body {
+  0%,
+  100% {
+    transform: rotateY(-40deg) rotateX(18deg);
+  }
+  50% {
+    transform: rotateY(-16deg) rotateX(7deg);
+  }
+  75% {
+    transform: rotateY(-8deg) rotateX(4deg);
+  }
+}
+@keyframes pm-assemble-front {
+  0%,
+  10% {
+    transform: translateZ(7.5em) translateX(-3.2em) translateY(-1em) rotateY(10deg);
+  }
+  46%,
+  84% {
+    transform: none;
+  }
+  100% {
+    transform: translateZ(7.5em) translateX(-3.2em) translateY(-1em) rotateY(10deg);
+  }
+}
+@keyframes pm-assemble-glow {
+  0%,
+  40% {
+    opacity: 0.12;
+  }
+  56%,
+  86% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.12;
+  }
+}
+@keyframes pm-turn {
+  0% {
+    transform: translateY(0) rotateY(-22deg) rotateX(6deg);
+  }
+  50% {
+    transform: translateY(-0.5em) rotateY(158deg) rotateX(2deg);
+  }
+  100% {
+    transform: translateY(0) rotateY(338deg) rotateX(6deg);
+  }
+}
+@keyframes pm-float {
+  0%,
+  100% {
+    transform: translateY(1em) rotateY(-30deg) rotateX(10deg) rotateZ(-3deg);
+  }
+  35% {
+    transform: translateY(-1.1em) rotateY(-12deg) rotateX(-3deg) rotateZ(2deg);
+  }
+  68% {
+    transform: translateY(-0.2em) rotateY(-36deg) rotateX(6deg) rotateZ(-1deg);
+  }
+}
+@keyframes pm-rise {
+  0%,
+  100% {
+    transform: translateY(2.2em) rotateX(68deg) rotateZ(-20deg) scale(0.94);
+  }
+  45% {
+    transform: translateY(0) rotateX(4deg) rotateY(-16deg) rotateZ(0deg) scale(1);
+  }
+  78% {
+    transform: translateY(-0.3em) rotateX(2deg) rotateY(12deg) rotateZ(0deg) scale(1);
+  }
+}
+@keyframes pm-sway {
+  0%,
+  100% {
+    transform: translateX(-0.6em) rotateY(-34deg) rotateX(5deg) rotateZ(-4deg);
+  }
+  50% {
+    transform: translateX(0.6em) rotateY(26deg) rotateX(3deg) rotateZ(3deg);
+  }
+}
+/* Only the visible slide moves; becoming active restarts the cycle from its first pose. */
+[data-active="true"] .phone-body[data-motion="assemble"] {
+  animation: pm-assemble-body 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+[data-active="true"] .phone-body[data-motion="assemble"] .phone-front {
+  animation: pm-assemble-front 8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+[data-active="true"] .phone-body[data-motion="assemble"] .phone-glow {
+  animation: pm-assemble-glow 8s ease-in-out infinite;
+}
+.phone-body[data-motion="assemble"] .phone-front {
+  transform: translateZ(7.5em) translateX(-3.2em) translateY(-1em) rotateY(10deg);
+}
+.phone-body[data-motion="assemble"] .phone-glow {
+  opacity: 0.12;
+}
+[data-active="true"] .phone-body[data-motion="turn"] {
+  animation: pm-turn 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+[data-active="true"] .phone-body[data-motion="float"] {
+  animation: pm-float 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+[data-active="true"] .phone-body[data-motion="rise"] {
+  animation: pm-rise 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+[data-active="true"] .phone-body[data-motion="sway"] {
+  animation: pm-sway 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 @utility hero-enter {
-  animation: hero-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: hero-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-/* v1.11: the carousel's pause button stops the phone too */
-.hero-root[data-paused="true"] .phone-body {
-  animation-play-state: paused;
-}
-
-/* Reduced motion: still unless the shopper presses play themselves (WCAG 2.2.2) */
-@media (prefers-reduced-motion: reduce) {
-  .phone-body,
-  .hero-root:not([data-user-play]) [data-active="true"] .phone-body {
-    animation: none;
-    transform: rotateY(-14deg) rotateX(4deg);
-  }
-  .hero-root[data-user-play] [data-active="true"] .phone-body {
-    animation: phone-turn 4s cubic-bezier(0.45, 0.05, 0.35, 1) infinite;
-  }
-  .phone-tilt {
-    transition: none;
-  }
+/* The carousel's pause button stops the phone too (v1.11) */
+.hero-root[data-paused="true"] .phone-body,
+.hero-root[data-paused="true"] .phone-body * {
+  animation-play-state: paused !important;
 }
 
 @keyframes hero-progress {
@@ -185,13 +275,6 @@
   }
   to {
     transform: scaleX(1);
-  }
-}
-
-/* The slide timer must keep its real length even under reduced motion; the carousel starts paused there instead. */
-@media (prefers-reduced-motion: reduce) {
-  [data-hero-progress] {
-    animation-duration: 4000ms !important;
   }
 }
 
@@ -247,51 +330,52 @@
     transform: rotateX(50deg) rotateZ(-22deg);
   }
 }
+/* v1.14: starts with the five layers clearly apart, merges slowly into one phone, holds, parts again */
 @keyframes xp-split {
   0%,
-  12% {
-    transform: translateZ(calc(var(--i) * 0.45em));
+  14% {
+    transform: translateZ(calc(var(--i) * 2.9em));
   }
-  42%,
-  70% {
-    transform: translateZ(calc(var(--i) * 3.1em));
+  50%,
+  78% {
+    transform: translateZ(calc(var(--i) * 0.16em));
   }
   100% {
-    transform: translateZ(calc(var(--i) * 0.45em));
+    transform: translateZ(calc(var(--i) * 2.9em));
   }
 }
-/* Labels stay readable when paused (frame 0): they only brighten and step out while the layers are apart */
+/* Labels are bright while the layers are apart and dim a little while they are merged */
 @keyframes xp-label {
   0%,
-  22%,
-  88%,
+  20%,
+  90%,
   100% {
-    opacity: 0.7;
-    transform: none;
-  }
-  42%,
-  70% {
     opacity: 1;
     transform: translateX(0.4em);
+  }
+  50%,
+  76% {
+    opacity: 0.6;
+    transform: none;
   }
 }
 .xp-rig {
   position: relative;
   transform-style: preserve-3d;
   transform: rotateX(56deg) rotateZ(-38deg);
-  animation: xp-sway 14s ease-in-out infinite;
+  animation: xp-sway 24s ease-in-out infinite;
 }
 .xp-layer {
   position: absolute;
   inset: 0;
   border-radius: 1.4em;
   transform-style: preserve-3d;
-  transform: translateZ(calc(var(--i) * 0.45em));
-  animation: xp-split 7s cubic-bezier(0.55, 0, 0.3, 1) infinite;
+  transform: translateZ(calc(var(--i) * 2.9em));
+  animation: xp-split 12s cubic-bezier(0.65, 0, 0.35, 1) infinite;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-canvas) 18%, transparent);
 }
 .xp-tag {
-  animation: xp-label 7s ease-in-out infinite;
+  animation: xp-label 12s ease-in-out infinite;
 }
 
 /* 2. Rotating ring of display panes (grades, dark band — glow allowed) */

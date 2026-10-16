@@ -178,3 +178,11 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q60 | Who sees which counter sales? | ★ Cashiers: their own sales, receipts and end of day. Managers and the owner: everyone's. |
 | Q61 | Undo a counter sale | ★ Not in M9 — returns and refunds come with M11 (Returns); until then a manager can correct stock on the product page. |
 
+## O. Hero and repair-section animations (2026-10-16) — answered
+
+| Q | Question | Decision |
+|---|---|---|
+| Q62 | Slide time, now that each phone has a slow animation (was 4 s, §0.3.1a) | **8 seconds** per slide. |
+| Q63 | Reduced-motion devices (Q49 said start still) | **Always play** the hero, the screen-change video and the five-layer scene until the shopper presses pause, on every device. Q49 still applies to the grades ring and value cards. |
+| Q64 | A different animation per phone | ★ Each phone model has its own motion; if two slides would get the same one, the next unused motion is used. |
+

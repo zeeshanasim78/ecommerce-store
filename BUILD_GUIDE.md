@@ -219,6 +219,12 @@ What later milestones must reuse: **M8** checkout still uses `getDeliveryCities(
 
 ---
 
+## v1.14 — Hero and repair-section animations (built 2026-10-16)
+
+See SPECIFICATION.md §26: 8-second hero slides with a slow, different motion per phone (screen placed onto the phone's base, slow turn, float, stand-up, sway), the phone the slide names, the five-layer assembly starting apart and merging, and the hero / "Changing a screen, explained" playing until the shopper presses pause.
+
+---
+
 ## Milestone 5 — The stock engine ⭐ most important *(2 days)* — Spec §6
 
 `src/server/inventory/stock.ts`:

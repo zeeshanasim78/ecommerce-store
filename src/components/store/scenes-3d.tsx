@@ -36,13 +36,16 @@ const LAYER_STYLE = [
   "linear-gradient(135deg, color-mix(in srgb, var(--color-white) 55%, transparent), color-mix(in srgb, var(--color-white) 8%, transparent) 60%)",
 ];
 
-/** Repair section: a display assembly that separates into its layers and closes again. */
+/**
+ * Repair section: a display assembly. v1.14 (owner request): it starts with the five layers clearly
+ * apart, then they slowly merge into one phone, hold, and part again (12-second cycle). Always plays (Q63).
+ */
 export function ExplodedPhone() {
   return (
-    <MotionScene label="phone layers" dark className="overflow-hidden rounded-bezel-lg bg-midnight text-canvas">
+    <MotionScene label="phone layers" dark always className="overflow-hidden rounded-bezel-lg bg-midnight text-canvas">
       <div className="ambient-dark absolute inset-0" aria-hidden="true" />
       <div className="relative grid items-center gap-8 p-6 sm:p-10 md:grid-cols-[1fr_1fr]">
-        <div className="xp-stage grid h-[22rem] place-items-center sm:h-[26rem]" aria-hidden="true">
+        <div className="xp-stage grid h-[24rem] place-items-center pt-16 sm:h-[26rem] md:pt-10" aria-hidden="true">
           <div className="xp-rig text-[0.8rem] sm:text-[0.95rem]" style={{ width: "10em", height: "20em" }}>
             {LAYER_STYLE.map((bg, i) => (
               <div

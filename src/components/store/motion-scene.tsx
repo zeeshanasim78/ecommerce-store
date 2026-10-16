@@ -12,11 +12,12 @@ const subscribe = (cb: () => void) => {
 
 /**
  * Wrapper for the CSS 3D scenes on the home page (v1.11, SPECIFICATION §23.5).
- * Plays by default; pauses when off screen (saves battery on phones), has a visible
- * pause / play button (WCAG 2.2.2), and starts paused when the device asks for reduced
- * motion — the shopper can still press play.
+ * Plays by default; rests while scrolled off screen (saves battery on phones, carries on where it
+ * was when it comes back) and has a visible pause / play button (WCAG 2.2.2). Without `always`, it
+ * starts paused when the device asks for reduced motion (Q49). With `always` (v1.14, Q63 — the
+ * "Changing a screen, explained" section), it plays on every device until the shopper presses pause.
  */
-export function MotionScene({ label, children, className, dark = false }: { label: string; children: ReactNode; className?: string; dark?: boolean }) {
+export function MotionScene({ label, children, className, dark = false, always = false }: { label: string; children: ReactNode; className?: string; dark?: boolean; always?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useSyncExternalStore(
     subscribe,
@@ -34,9 +35,9 @@ export function MotionScene({ label, children, className, dark = false }: { labe
     return () => io.disconnect();
   }, []);
 
-  const wants = userPlay ?? !reduce;
+  const wants = userPlay ?? (always || !reduce);
   return (
-    <div ref={ref} className={cn("motion-scene relative", className)} data-play={wants && visible ? "true" : "false"}>
+    <div ref={ref} className={cn("motion-scene relative", always && "motion-always", className)} data-play={wants && visible ? "true" : "false"}>
       {children}
       <button
         type="button"
