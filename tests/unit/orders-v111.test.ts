@@ -419,7 +419,7 @@ describe("Orders admin — prepaid flow (owner request v1.11)", () => {
     expect(orderCounts(db)).toMatchObject({
       action: 2,
       payment: 1,
-      dispatch: 1,
+      pack: 1, // v1.15: "Ready to dispatch" became "To pack" (M10 Phase B)
       all: 2,
     });
     expect(listOrders(db, { filter: "all", q: "0321 7654321" }).map((o) => o.id)).toEqual([cod.orderId]);

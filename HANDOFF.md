@@ -1,11 +1,11 @@
-# Caidea — handoff notes (as of v1.14, 2026-10-16)
+# Caidea — handoff notes (as of v1.15, 2026-10-17)
 
-Read this first in a new chat, then SPECIFICATION.md (v1.14), BUILD_GUIDE.md and CLARIFICATIONS.md.
+Read this first in a new chat, then SPECIFICATION.md (v1.15), BUILD_GUIDE.md and CLARIFICATIONS.md.
 
 ## Where the build stands
-- Done: Milestones 1–9 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, Milestone 10 Phase A (Online orders admin, v1.11).
-- Next: **Milestone 10 Phase B** — PACKED / IN_TRANSIT / DELIVERED steps, courier adapters (Leopards, PostEx) when API keys arrive, labels, COD remittance. Then M11 Returns (must also handle counter sales — see BUILD_GUIDE "For M11" under M9).
-- Last delivered: `caidea-v1.14.zip` (§26: slower hero phones, per-phone motions, merging five-layer scene, always-play hero and repair section). The zip has no `.git` folder; commit it in your own copy as `v1.14: slow per-phone hero animations, merging layers, always-play`. (v1.13 = M9 counter sale, §25.)
+- Done: Milestones 1–10 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 complete** (Phase A Online orders v1.11; **Phase B v1.15**: pack, courier booking, tracking, delivered, returned parcels, labels, load sheets, COD remittance).
+- Next: **M11 Returns & warranty** (must also handle counter sales — see BUILD_GUIDE "For M11" under M9 and M10; delivered online items now have `warranty_until`).
+- Last delivered: `caidea-v1.15.zip` (§27: M10 Phase B). The zip has no `.git` folder; commit it in your own copy as `v1.15: M10 Phase B — couriers, labels, tracking, returns to shop, COD remittance`. (v1.14 = hero animations §26; v1.13 = M9 counter sale §25.)
 - Go-live checklist (shared doc, tick as you go): https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e
 
 ## Stack
@@ -36,6 +36,9 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - v1.14 (§26; Q62–Q64): hero slides 8 s; five slow phone motions (assemble = screen placed onto the phone's base, turn, float, rise, sway) in `globals.css` `pm-*`, picked per model in `device-profiles.ts` (`assignMotions`, `deviceProfileForSlide` — reads the slide text when no product is linked); five-layer scene starts apart and merges (12 s); hero, repair video and layers scene always play until paused (`.motion-always` is skipped by the global reduced-motion rule). No schema change, no new dependency.
 - Migration timestamps: Drizzle skips a migration whose `when` is older than the last applied one. 0007 was stamped ahead of real time, so 0008 is stamped after it; `tests/unit/constitution.test.ts` now fails if the order is ever wrong. When you generate 0009, check its `when` in `drizzle/meta/_journal.json` is larger than 0008's (`1791187967456`), or bump it.
 
+- v1.15 (M10 Phase B, §27; ★ defaults Q65–Q74): order steps **Mark packed → Book with courier → On the way → Mark delivered**, or **Receive returned parcel** (good items back on sale via `ORDER_CANCEL_RESTOCK`, damaged kept off with a note). **Leopards + PostEx adapters** in `src/server/couriers/` — off until keys are in the environment file (`LEOPARDS_API_KEY/_PASSWORD/_MODE` (staging first), `POSTEX_API_TOKEN`, `POSTEX_PICKUP_ADDRESS_CODE`); built from the couriers' published client libraries, **confirm with sandbox keys** (Admin → Couriers → Test connection). Pasting a CN by hand always works. Courier calls never happen inside a stock transaction (constitution test). Tracking: `/api/cron/sync-tracking` every 2 h + Refresh buttons; never restocks on its own. Labels 100 × 150 mm with Code 128 barcodes (`src/lib/code128.ts`), packing slips, load sheets (`LS-YYMMDD-NN`). **COD remittance**: upload the courier's payment CSV → matched by CN → confirm → `COD_REMITTED` (differences only with a ticked reason). Delivery sets `warranty_until`. Migration 0009 (new tables `courier_cities`, `load_sheets`, `cod_remittances`, `cod_remittance_lines`; shipment columns). Order filters changed: To pack / Packed — book courier / With courier / Delivered / Returned to us. Test courier: `tests/helpers/fake-courier.ts` (`COURIER_TEST_BASE_URL`, localhost only).
+- Migration timestamps: 0009's `when` is `1792181203128` (after 0008). Check the next one is larger.
+
 ## Working rules from the owner
 - Before any change, check it against the specification; if it conflicts, offer options and apply the owner's choice.
 - After changes, confirm nothing that worked before is broken (unit tests, `npm run db:verify`, lint, typecheck, build, browser tests).
@@ -49,12 +52,18 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Put the real JazzCash / Easypaisa / NayaPay and bank details in the environment file (`.env.production` on the shop server) and restart — the SAMPLE values from `.env.example` must not reach customers (Shop settings warns while they're in use). Set shop phone and WhatsApp in Admin → Shop settings.
 - Set up the shop's Gmail (2-Step Verification + app password) in `GMAIL_USER` / `GMAIL_APP_PASSWORD`, set `ALERT_EMAIL_TO`, then Admin → Shop settings → Send a test email. After any payment-details change, confirm it in Shop settings.
 - Work through the go-live checklist doc before opening (link above).
-- Online orders can now be handled in Admin → Online orders (M10 Phase A). Courier booking is still manual (paste the CN); Phase B courier APIs, PACKED/DELIVERED steps and COD remittance remain in M10.
+- (v1.15) When the Leopards / PostEx API keys arrive: put them in the environment file, restart, Admin → Couriers → Test connection and load cities, match the cities it couldn't (e.g. Peshawar, Multan), book one parcel on Leopards **staging**, check slip / tracking / cancel, then `LEOPARDS_MODE=live`. Until then, book on the portals and paste the CN (labels, load sheets, tracking by hand and COD remittance all work without keys).
+- (v1.15) Confirm or change the M10 defaults Q65–Q74 (CLARIFICATIONS §P) — especially: packing as its own step, 500 g default weight, warranty from the delivery date, coupon not returned on a returned parcel, accepting COD differences with a reason.
+- (v1.15) Ask each courier for its COD payment report as CSV (or save their Excel as CSV) — Admin → COD remittance reads columns like "CN" / "Tracking Number" and "COD Amount" / "Invoice Payment".
+- (v1.15) Labels: a 4 × 6 in (100 × 150 mm) label printer is ideal; A4/A5 paper also works (the browser scales).
 - Set the **sales email** and WhatsApp in Shop settings, and on the live server set `BETTER_AUTH_URL` to the real https address (email links use it; Shop settings warns while it's localhost).
 - Performance note: the home page's JavaScript is ~185 KB gzip, mostly the Next.js/React framework, which was already over the §12 100 KB target before v1.11 (v1.11 added 268 bytes). Review in M17.
-- Schedule `/api/cron/expire-unpaid` (e.g. every 15 min) when the shop server is set up (M18).
+- Schedule `/api/cron/expire-unpaid` (every 15 min) and `/api/cron/sync-tracking` (every 2 hours, v1.15) when the shop server is set up (M18).
 - (v1.13) Counter: decide whether managers should also take wallet/card payments (currently owner only, per your answer), set up the receipt printer on the till PC (80 mm roll; `--kiosk-printing` for no dialog), create a CASHIER login for each person at the till, register your regular technicians. Undo/refund of a counter sale comes with M11 Returns.
 - Before go-live: enter real opening stock by counting each colour (product page → Count or correct stock) or with the CSV `opening_stock` column.
+
+## Upgrading an existing copy to v1.15
+From v1.14: replace the files → `npm install` → `npm run db:migrate` (migration 0009 adds the courier / load-sheet / COD remittance tables and shipment columns; backs up first) → `npm run setup:env` is not needed — add the courier lines from `.env.example` to your environment file (blank is fine until the keys arrive) → `npm test` → `npm run db:verify` → `npm run build` → restart. Then Admin → Couriers to check the status, and Online orders → To pack. No change to existing orders; orders already "Handed to the courier" can be marked delivered or tracked as before.
 
 ## Upgrading an existing copy to v1.14
 From v1.13: replace the files → `npm install` → `npm test` → `npm run build` → restart. No database change.

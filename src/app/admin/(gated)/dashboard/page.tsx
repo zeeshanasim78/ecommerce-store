@@ -1,4 +1,5 @@
 import { orderCounts } from "@/server/orders/admin-orders";
+import { codOutstanding } from "@/server/orders/cod-remittance";
 import Link from "next/link";
 import { and, asc, count, eq, gt, isNull, lte, sql } from "drizzle-orm";
 import { AdminHeader, Notice } from "@/components/admin/ui";
@@ -10,7 +11,7 @@ import { PaymentAlert } from "@/components/admin/payment-alert";
 import { canAccess, requireStaff } from "@/server/dal";
 import { getPaymentAlert } from "@/server/settings/payment-integrity";
 import { counterDaySummary, karachiDate, listTechnicians } from "@/server/counter/pos";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, paisa } from "@/lib/money";
 
 export const metadata = { title: "Dashboard" };
 
@@ -37,6 +38,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const one = (q: { n: number }[]) => q[0]?.n ?? 0;
   // v1.11: online orders waiting for staff (payment proof to check, or ready to dispatch)
   const ordersToDo = canAccess(staff.role, "orders") ? orderCounts(db) : null;
+  // v1.15 (M10 Phase B): cash the couriers collected and still owe the shop (spec §7 Dashboard "COD awaiting remittance")
+  const codOwed = canAccess(staff.role, "orders") ? codOutstanding(db).totalOwedPaisa : 0;
   // v1.13 (M9): today's counter takings — a cashier sees only their own (spec §7 Dashboard)
   const counterToday = canAccess(staff.role, "counter") ? counterDaySummary(db, { date: karachiDate(new Date()), cashierId: canAccess(staff.role, "technicians") ? undefined : staff.id }).all : null;
   const techniciansWaiting = canAccess(staff.role, "technicians") ? listTechnicians(db, { status: "PENDING" }).length : 0;
@@ -74,12 +77,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <>
       <AdminHeader title={`Welcome, ${staff.name.split(" ")[0]}`} description="Today at the counter, online orders waiting, storefront content and low stock at a glance." />
       {denied && DENIED[denied] ? <Notice tone="error">{DENIED[denied]}</Notice> : null}
-      {ordersToDo && ordersToDo.action + ordersToDo.payment > 0 ? (
+      {ordersToDo && ordersToDo.action + ordersToDo.payment + ordersToDo.courier > 0 ? (
         <Link href="/admin/orders" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-bezel bg-midnight px-6 py-4 font-medium text-canvas">
           <span className="font-semibold">Online orders</span>
           <span className="tabular">{ordersToDo.action} need action</span>
           <span className="tabular">{ordersToDo.payment} waiting for payment</span>
+          <span className="tabular">{ordersToDo.pack} to pack</span>
+          <span className="tabular">{ordersToDo.book} to book</span>
+          <span className="tabular">{ordersToDo.courier} with couriers</span>
           <span className="ml-auto underline underline-offset-4">Open orders</span>
+        </Link>
+      ) : null}
+      {codOwed > 0 ? (
+        <Link href="/admin/orders/remittance" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-bezel bg-white px-6 py-4 font-medium ring-1 ring-midnight/8">
+          <span className="font-semibold">COD awaiting remittance</span>
+          <span className="tabular">Couriers owe the shop {formatMoney(paisa(codOwed))}</span>
+          <span className="ml-auto underline underline-offset-4">COD remittance</span>
         </Link>
       ) : null}
       {counterToday ? (

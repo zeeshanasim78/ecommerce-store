@@ -64,6 +64,8 @@ Coupons are checked and redeemed by the engine in `src/server/pricing/coupons.ts
 | `npm run lint` / `npm run typecheck` / `npm test` | Code checks and unit tests — run before every commit |
 | `npm run setup:env` | Creates `.env.local` (or adds missing payment keys to it) with SAMPLE account details — replace them before going live |
 | `curl -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/expire-unpaid` | Cancel unpaid wallet/bank orders past their waiting time (scheduled on the shop server in M18) |
+| `curl -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/sync-tracking` | Ask Leopards / PostEx about open parcels (v1.15; every 2 hours on the shop server, M18) |
+| `npx tsx tests/helpers/fake-courier.ts 4010` | A pretend Leopards + PostEx for trying bookings without real keys (set `COURIER_TEST_BASE_URL=http://127.0.0.1:4010` and the fake keys from that file; never on the live server) |
 | `npm run db:studio` | Browse the database in your browser |
 | `npm run db:generate` | After editing `src/db/schema/*`, create a migration in `drizzle/` (read it before applying) |
 | `npm run db:migrate` | Apply new migrations (backs up the database first into `data/backups/`) |

@@ -186,3 +186,18 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q63 | Reduced-motion devices (Q49 said start still) | **Always play** the hero, the screen-change video and the five-layer scene until the shopper presses pause, on every device. Q49 still applies to the grades ring and value cards. |
 | Q64 | A different animation per phone | ★ Each phone model has its own motion; if two slides would get the same one, the next unused motion is used. |
 
+
+## P. Milestone 10 Phase B — couriers, delivery, COD remittance (2026-10-17) — ★ defaults used until you say otherwise
+
+| Q | Question | ★ Default used |
+|---|---|---|
+| Q65 | Is "Packed" a required step? | **Mark packed** is its own step (Confirmed → Packed, prints the packing slip). Booking through a courier's API needs Packed (spec §9). The Phase A "Dispatch" form (paste a CN from the courier portal) still works from Confirmed or Packed. |
+| Q66 | Courier API keys haven't arrived — build the adapters now? | **Yes**, built from the couriers' published API shapes and **off until the keys are in the environment file** (`LEOPARDS_API_KEY` / `LEOPARDS_API_PASSWORD`, `POSTEX_API_TOKEN`). Leopards starts on its staging server (`LEOPARDS_MODE=staging`). Pasting a CN by hand always stays available. Must be checked with sandbox keys before go-live (Admin → Couriers → Test connection). |
+| Q67 | Parcel weight and pieces when booking | 500 g and 1 piece, changeable on each booking. |
+| Q68 | Who marks an order delivered? | Staff (**Mark delivered**) or the tracking sync. COD orders then show "COD collected by the courier" until the courier pays the shop. **Warranty starts on the delivery date** (`warranty_until` = delivered + the product's warranty days) — used by M11 Returns. |
+| Q69 | Parcel returned to the shop (RTO) | **Receive returned parcel** only when it is physically back: each item is either put back on sale (`ORDER_CANCEL_RESTOCK`) or kept off sale as damaged (noted). COD → payment Failed. A paid order needs "I will refund" → Refunded. A coupon use is **not** given back. No customer email. |
+| Q70 | Tracking updates | Every 2 hours by `/api/cron/sync-tracking` (and a **Refresh tracking** button) for every open Leopards / PostEx shipment whose courier keys are set. It moves orders to On the way / Delivered and flags parcels coming back; it never restocks a return. |
+| Q71 | COD remittance file | Upload the courier's payment report (CSV). Rows are matched by courier + CN. Equal amount → remitted. A different amount — or a parcel we hadn't marked delivered yet — is listed and only accepted if staff tick it and write why (it is then marked delivered too). Unknown CNs, already-remitted, returned and non-COD parcels are listed and skipped. The same file can't be applied twice. |
+| Q72 | Undo a booking | **Cancel booking** while the courier hasn't picked the parcel up (shipment still Booked): the courier booking is cancelled through the API (for API bookings) and the order goes back to Packed. |
+| Q73 | Labels and load sheets | Every shipment gets a printable **100 × 150 mm label** (sender, receiver, CN barcode, COD amount or "Paid — collect nothing") and a **packing slip**; works with pasted CNs too. API bookings also link the courier's own slip / airway bill. **Load sheet**: a printable list of parcels handed to a courier's rider with COD totals and signature lines; PostEx's own load-sheet PDF too when its key is set. |
+| Q74 | Who can do all this | OWNER and MANAGER (the existing `orders` module), COD remittance included. |

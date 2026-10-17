@@ -126,6 +126,14 @@ const oldGrades = sqlite.prepare("SELECT COUNT(*) AS n FROM products WHERE quali
 if (oldGrades.n === 0) pass("No product still shows an AAA grade name (now “A Grade”)");
 else fail(`${oldGrades.n} product(s) still use an AAA grade name — run \`npm run db:migrate\``);
 
+console.log("\nCouriers and COD remittance (v1.15, M10 Phase B)");
+const anyUser = (sqlite.prepare("SELECT id FROM user LIMIT 1").get() as { id: string } | undefined)?.id ?? "system";
+const anyZone = (sqlite.prepare("SELECT id FROM delivery_zones LIMIT 1").get() as { id: string } | undefined)?.id ?? "";
+mustFail("City match for a courier without an adapter", "INSERT INTO courier_cities (id, courier, city_id, courier_city_code, courier_city_name) VALUES ('v1', 'TCS', ?, '1', 'X')", [anyZone]);
+mustFail("Load sheet with no parcels", "INSERT INTO load_sheets (id, code, courier, parcels, cod_total_paisa, created_by) VALUES ('v1', 'LS-VERIFY', 'LEOPARDS', 0, 0, ?)", [anyUser]);
+mustFail("Remittance row with an unknown result", "INSERT INTO cod_remittance_lines (id, remittance_id, row_no, cn, amount_paisa, result) VALUES ('l1', 'none', 1, 'X', 1, 'MAYBE')");
+mustFail("Remittance with a negative amount", "INSERT INTO cod_remittance_lines (id, remittance_id, row_no, cn, amount_paisa, result) VALUES ('l1', 'none', 1, 'X', -5, 'MATCH')");
+
 console.log("\nLedger invariant (spec §6.5): SUM(quantity_changed) = current_stock for every variant");
 const drift = findLedgerDrift(db);
 if (drift.length === 0) pass("All variants reconcile with their ledger");

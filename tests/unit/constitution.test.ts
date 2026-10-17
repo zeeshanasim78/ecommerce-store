@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { EMAIL_ENV_KEYS } from "@/server/notify/email";
 import { PAYMENT_ENV_KEYS } from "@/server/settings/payment-env";
+import { COURIER_ENV_KEYS } from "@/server/couriers/config";
 
 /**
  * SPECIFICATION.md §0 (the Constitution) and §10–§11, checked on every `npm test`.
@@ -104,6 +105,34 @@ describe("v1.10 — all email goes through the Gmail sender", () => {
   });
 });
 
+describe("v1.15 §27 — couriers", () => {
+  it("only the courier adapters talk to courier servers, and never inside a stock transaction", () => {
+    const offenders = files("src").filter((f) => !f.startsWith("src/server/couriers/") && /leopardscourier\.com|api\.postex\.pk/.test(read(f)));
+    expect(offenders).toEqual([]);
+    // Courier calls are awaited before/after withStockTransaction — never inside its callback (spec §6.2)
+    for (const f of ["src/server/orders/fulfilment.ts", "src/server/couriers/city-map.ts", "src/server/orders/cod-remittance.ts"]) {
+      const src = read(f);
+      const bodies: string[] = [];
+      for (let i = src.indexOf("withStockTransaction(db, (tx) =>"); i >= 0; i = src.indexOf("withStockTransaction(db, (tx) =>", i + 1)) {
+        let depth = 0;
+        let j = src.indexOf("(", i);
+        const start = j;
+        for (; j < src.length; j++) {
+          if (src[j] === "(") depth++;
+          else if (src[j] === ")" && --depth === 0) break;
+        }
+        bodies.push(src.slice(start, j));
+      }
+      expect(bodies.length, f).toBeGreaterThan(0);
+      for (const b of bodies) expect(b, f).not.toMatch(/\bawait\b|\.book\(|\.track\(|\.cancel\(|\.cities\(/);
+    }
+  });
+
+  it("the test courier must be on this machine", () => {
+    expect(read("src/server/couriers/config.ts")).toMatch(/\^http:\\\/\\\/\(127\\\.0\\\.0\\\.1\|localhost\)/);
+  });
+});
+
 describe("v1.11 §23 — order details are private", () => {
   it("the order PDF and the full order view are only served after the private-cookie check", () => {
     expect(read("src/app/(storefront)/order/[code]/pdf/route.ts")).toMatch(/await orderIdFromCookie\(/);
@@ -143,7 +172,7 @@ describe("§11 security rules", () => {
 
 describe("§0.4 rule 5 — .env.example documents every key the app reads", () => {
   it("lists every process.env key used in src/", () => {
-    const used = new Set<string>([...PAYMENT_ENV_KEYS, ...EMAIL_ENV_KEYS]);
+    const used = new Set<string>([...PAYMENT_ENV_KEYS, ...EMAIL_ENV_KEYS, ...COURIER_ENV_KEYS]);
     for (const f of files("src")) for (const m of read(f).matchAll(/process\.env\.([A-Z_][A-Z0-9_]*)/g)) used.add(m[1]!);
     used.delete("NODE_ENV"); // set by Next.js itself
     used.delete("NEXT_RUNTIME"); // set by Next.js itself (instrumentation)

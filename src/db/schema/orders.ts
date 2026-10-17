@@ -4,7 +4,7 @@ import { id, inList, timestamp } from "./_helpers";
 import { user } from "./auth";
 import { customers } from "./customers";
 import { productVariants } from "./inventory";
-import { COURIERS, SHIPMENT_STATUSES, deliveryZones } from "./logistics";
+import { BOOKING_SOURCES, COURIERS, SHIPMENT_STATUSES, codRemittances, deliveryZones } from "./logistics";
 
 /** Orders (online + counter), items, payments, webhooks, shipments — SPECIFICATION.md §4.7–4.11. */
 
@@ -259,6 +259,17 @@ export const shipments = sqliteTable(
     rtoAt: text("rto_at"),
     loadsheetId: text("loadsheet_id"),
     createdBy: text("created_by").references(() => user.id),
+    // ---- v1.15 (M10 Phase B, spec §27) ----
+    /** MANUAL = CN pasted from the courier portal; API = booked through the courier adapter. */
+    bookedVia: text("booked_via", { enum: BOOKING_SOURCES }).default("MANUAL").notNull(),
+    pieces: integer("pieces").default(1).notNull(),
+    /** Last time the tracking sync asked the courier about this CN. */
+    trackingCheckedAt: text("tracking_checked_at"),
+    cancelledAt: text("cancelled_at"),
+    /** COD money the courier paid the shop for this parcel (from a remittance file). */
+    remittanceId: text("remittance_id").references(() => codRemittances.id),
+    remittedPaisa: integer("remitted_paisa"),
+    remittedAt: text("remitted_at"),
   },
   (t) => [
     check("shipments_courier", inList("courier", COURIERS)),

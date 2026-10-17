@@ -1,0 +1,41 @@
+To create a Git branch from a specific commit, you can use one of several commands depending on your preference and whether you want to switch to the new branch immediately.
+
+Step 1 : First, locate the commit hash (SHA-1) you want to use by running git log --oneline. 
+
+Step 2 : 
+Method 1 : Create and switch immediately (Recommended)   : This is the most common way to create the branch and automatically switch your working directory to it
+git switch -c <new-branch-name> <commit-hash>
+
+Method 2: Create the branch without switching
+If you want to create the new branch but remain on your currently active branch, use the git branch command:
+git branch <new-branch-name> <commit-hash>
+
+
+Example Workflow
+If you want to create a branch called hotfix-login from a past commit with the hash 9fceb02, you would run:
+1. Find your commit hash:bash
+git log --oneline
+
+
+2. Create and switch to the new branch:bash
+git switch -c MileStone-10-Testing 4d06bea
+
+
+3. Push to your remote repository (Optional):bash
+git push -u origin MileStone-10-Testing
+
+
+To Merge the branch
+==================================================
+To merge a Git branch into your main branch, follow these core steps in your terminal or command line:
+1) Switch to main Run : git checkout main 
+to move to your main branch.
+
+2) Pull latest changes Run : git pull origin main 
+to make sure your local main branch is up to date with the remote repository.
+
+3) Merge your branch Run :  git merge <branch-name> 
+(replacing <branch-name> with your feature branch name) to combine the changes.
+
+4) Push to remote Run : git push origin main 
+to send the merged updates back to your remote repository.

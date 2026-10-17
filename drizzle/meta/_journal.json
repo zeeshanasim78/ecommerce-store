@@ -64,6 +64,13 @@
       "when": 1791187967456,
       "tag": "0008_v1_13_counter_sale",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1792181203128,
+      "tag": "0009_v1_15_couriers_remittance",
+      "breakpoints": true
     }
   ]
 }

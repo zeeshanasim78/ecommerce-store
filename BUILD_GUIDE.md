@@ -361,7 +361,7 @@ Keyboard-first screen: SKU/barcode input (USB scanners type like a keyboard + En
 
 ## Milestone 10 — Orders admin & couriers *(3–4 days, + API work when keys arrive)* — Spec §9
 
-> **v1.11: Phase A is built** (SPECIFICATION §23.2): `/admin/orders` list + filters, order page with Record payment proof, Confirm payment, Dispatch (courier + CN), Cancel, email log and history; customer emails on each step. Still to do here: PACKED / IN_TRANSIT / DELIVERED steps, Phase B courier adapters, labels, COD remittance.
+> **v1.11: Phase A is built** (SPECIFICATION §23.2): `/admin/orders` list + filters, order page with Record payment proof, Confirm payment, Dispatch (courier + CN), Cancel, email log and history; customer emails on each step. **v1.15: Phase B is built** (SPECIFICATION §27) — see the note at the end of this milestone.
 
 1. Orders list/detail, status transitions, **Verify payment** button for manual TIDs (checks TID uniqueness).
 2. **Phase A (no API keys yet):** "Book shipment" form where staff paste the CN number from the courier portal.
@@ -369,6 +369,12 @@ Keyboard-first screen: SKU/barcode input (USB scanners type like a keyboard + En
 4. COD remittance: upload courier CSV → mark orders `COD_REMITTED`, show mismatches.
 
 **Done when:** an order goes NEW → CONFIRMED → PACKED → BOOKED → DELIVERED with every step in its history; label prints (Phase B).
+
+> ✅ **Built (2026-10-17, v1.15).** SPECIFICATION §27, defaults Q65–Q74. Admin → Sales: **Online orders** (Pack → Book with courier → With the courier → Delivered / Returned, tick-box bulk actions), **COD remittance**, **Couriers**; labels, packing slips and load sheets print from the order list. Logic in `src/server/orders/fulfilment.ts`, `cod-remittance.ts`, `src/server/couriers/` (22 unit tests against a fake courier). Checked in a production build: NEW → CONFIRMED → PACKED → BOOKED → IN_TRANSIT → DELIVERED with every step in the history, label prints as 100 × 150 mm, COD remittance applied from a CSV.
+>
+> **When the courier keys arrive:** put them in the environment file (`LEOPARDS_API_KEY`, `LEOPARDS_API_PASSWORD`, keep `LEOPARDS_MODE=staging` first; `POSTEX_API_TOKEN`), restart, open Admin → Couriers → **Test connection and load cities**, match any city it couldn't, then book one test parcel on Leopards staging and check the slip, tracking and cancel. The adapters follow the couriers' published client libraries — if a reply looks different, the Couriers page and the order history show the courier's own error words. Then `LEOPARDS_MODE=live`.
+>
+> **For M11 Returns:** delivered online items now carry `warranty_until` (from the delivery date); a parcel that never reached the customer is handled here (Receive returned parcel), not as an RMA. **For M12:** COD reconciliation = `codOutstanding()` + `cod_remittances` / `cod_remittance_lines`. **For M18:** add a timer for `/api/cron/sync-tracking` every 2 hours.
 
 ---
 
@@ -437,7 +443,7 @@ Playwright: browse → add to cart → COD checkout; manual TID checkout + admin
 3. Run the app with **systemd** as a single process (`next start -p 3000`; no cluster mode).
 4. **Cloudflare Tunnel** (`cloudflared`): connects the shop server to Cloudflare *outbound*, so your domain works over HTTPS without a static IP or opening router ports. Point `caidea.pk` (or your domain) at the tunnel.
 5. **Backups:** Litestream → Cloudflare R2 or Backblaze B2 (continuous), plus a nightly snapshot. Test a restore on another computer.
-6. systemd timers call `/api/cron/*` with `CRON_SECRET` (expire unpaid orders, tracking sync, stock reconcile).
+6. systemd timers call `/api/cron/*` with `CRON_SECRET`: `expire-unpaid` every 15 min, `sync-tracking` every 2 hours (v1.15), `reconcile-stock` nightly.
 7. Admin access to the server: SSH key only (or through the tunnel with Cloudflare Access).
 8. **Protect the environment file and secrets (v1.9 security review — SPECIFICATION §21):**
    - Put the settings at `/etc/caidea/caidea.env`, **outside** the app folder: `sudo install -d -m 700 /etc/caidea`, then `sudo install -m 600 -o root -g root caidea.env /etc/caidea/caidea.env`. Never copy `.env.local` from a development PC.

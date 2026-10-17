@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { DB, Tx } from "@/db/connection";
 import { deliveryZones, orderItems, orders, payments, shipments } from "@/db/schema";
 import { FULFILLMENT_LABEL, PAYMENT_LABEL } from "@/lib/order-labels";
@@ -46,7 +46,7 @@ export type CustomerOrder = {
   payDeadline: string | null;
   waitHours: number;
   eta: string | null;
-  shipment: { courier: string; cn: string | null; bookedAt: string } | null;
+  shipment: { courier: string; cn: string | null; bookedAt: string; deliveredAt: string | null } | null;
   items: {
     name: string;
     detail: string;
@@ -73,7 +73,13 @@ export function loadCustomerOrder(db: DB | Tx, orderId: string, settings?: Check
   const s = settings ?? getCheckoutSettings(db);
   const items = db.select().from(orderItems).where(eq(orderItems.orderId, order.id)).all();
   const zone = order.cityId ? db.select().from(deliveryZones).where(eq(deliveryZones.id, order.cityId)).get() : undefined;
-  const ship = db.select().from(shipments).where(eq(shipments.orderId, order.id)).orderBy(desc(shipments.bookedAt)).get();
+  // v1.15: a cancelled courier booking doesn't count (the order may be booked again)
+  const ship = db
+    .select()
+    .from(shipments)
+    .where(and(eq(shipments.orderId, order.id), ne(shipments.status, "CANCELLED")))
+    .orderBy(desc(shipments.bookedAt), desc(sql`${shipments}.rowid`))
+    .get();
   const method = order.paymentMethod as CheckoutMethod;
   const cancelled = order.fulfillmentStatus === "CANCELLED";
   const awaitingPayment = MANUAL_METHODS.includes(method) && (order.paymentStatus === "UNPAID" || order.paymentStatus === "PENDING_VERIFICATION") && !cancelled;
@@ -113,6 +119,7 @@ export function loadCustomerOrder(db: DB | Tx, orderId: string, settings?: Check
           courier: COURIER_LABEL[ship.courier] ?? ship.courier,
           cn: ship.cnNumber,
           bookedAt: ship.bookedAt,
+          deliveredAt: ship.deliveredAt,
         }
       : null,
     items: items.map((i) => ({

@@ -15,6 +15,8 @@ const GROUPS: { heading: string; items: Item[] }[] = [
       { href: "/admin/counter-sale", label: "Counter sale", module: "counter" },
       { href: "/admin/counter-sale/summary", label: "End of day", module: "counter" },
       { href: "/admin/orders", label: "Online orders", module: "orders" },
+      { href: "/admin/orders/remittance", label: "COD remittance", module: "orders" },
+      { href: "/admin/orders/couriers", label: "Couriers", module: "orders" },
       { href: "/admin/technicians", label: "Technicians", module: "technicians" },
     ],
   },

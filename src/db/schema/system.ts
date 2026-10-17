@@ -24,7 +24,10 @@ export type SettingKey =
   | "email_daily_count" // v1.10: Gmail recipients sent today (free-tier limit)
   | "sales_email" // v1.11: where customers email payment screenshots; gets a copy of each order
   | "cod_pause_message" // v1.11: shown at checkout while cash on delivery is paused
-  | "prepaid_free_delivery"; // v1.12: true = no delivery charge when the customer pays in advance
+  | "prepaid_free_delivery" // v1.12: true = no delivery charge when the customer pays in advance
+  | "courier_cities_leopards" // v1.15: Leopards' city list, as last loaded from its API
+  | "courier_cities_postex" // v1.15: PostEx's operational cities, as last loaded from its API
+  | "tracking_sync_last"; // v1.15: when tracking was last synced, and what it found
 
 export const settings = sqliteTable("settings", {
   key: text("key").$type<SettingKey>().primaryKey(),

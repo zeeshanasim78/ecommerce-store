@@ -22,6 +22,8 @@ export class OrderActionError extends Error {}
 type Order = typeof orders.$inferSelect;
 const isManual = (o: Order) => MANUAL_METHODS.includes(o.paymentMethod as CheckoutMethod);
 const TID = /^[A-Za-z0-9-]{6,30}$/;
+/** "orders"."id" written out in full: inside a SELECT-list subquery Drizzle would print a bare "id". */
+const ORDER_ID = sql`${sql.identifier("orders")}.${sql.identifier("id")}`;
 const snap = (o: Order) => ({
   paymentStatus: o.paymentStatus,
   fulfillmentStatus: o.fulfillmentStatus,
@@ -199,27 +201,35 @@ export function cancelOrder(db: DB, orderId: string, input: { reason: string; re
 export const ORDER_FILTERS = {
   action: "Needs action",
   payment: "Waiting for payment",
-  dispatch: "Ready to dispatch",
-  dispatched: "Dispatched",
+  pack: "To pack",
+  book: "Packed — book courier",
+  courier: "With courier",
+  delivered: "Delivered",
+  returned: "Returned to us",
   cancelled: "Cancelled",
   all: "All",
 } as const;
 export type OrderFilter = keyof typeof ORDER_FILTERS;
 
+/** v1.15 (M10 Phase B): the steps after payment — pack, book, with courier, delivered, returned. */
 function filterWhere(f: OrderFilter) {
   const manual = inArray(orders.paymentMethod, [...MANUAL_METHODS]);
+  const payable = or(eq(orders.paymentMethod, "COD"), eq(orders.paymentStatus, "PAID"));
   switch (f) {
     case "payment":
       return and(manual, inArray(orders.paymentStatus, ["UNPAID", "PENDING_VERIFICATION"]), ne(orders.fulfillmentStatus, "CANCELLED"));
-    case "dispatch":
-      return and(inArray(orders.fulfillmentStatus, ["CONFIRMED", "PACKED"]), or(eq(orders.paymentMethod, "COD"), eq(orders.paymentStatus, "PAID")));
+    case "pack":
+      return and(eq(orders.fulfillmentStatus, "CONFIRMED"), payable);
+    case "book":
+      return and(eq(orders.fulfillmentStatus, "PACKED"), payable);
     case "action":
-      return or(
-        and(manual, eq(orders.paymentStatus, "PENDING_VERIFICATION"), ne(orders.fulfillmentStatus, "CANCELLED")),
-        and(inArray(orders.fulfillmentStatus, ["CONFIRMED", "PACKED"]), or(eq(orders.paymentMethod, "COD"), eq(orders.paymentStatus, "PAID"))),
-      );
-    case "dispatched":
-      return inArray(orders.fulfillmentStatus, ["BOOKED", "IN_TRANSIT", "DELIVERED", "RETURNED_TO_ORIGIN"]);
+      return or(and(manual, eq(orders.paymentStatus, "PENDING_VERIFICATION"), ne(orders.fulfillmentStatus, "CANCELLED")), and(inArray(orders.fulfillmentStatus, ["CONFIRMED", "PACKED"]), payable));
+    case "courier":
+      return inArray(orders.fulfillmentStatus, ["BOOKED", "IN_TRANSIT"]);
+    case "delivered":
+      return eq(orders.fulfillmentStatus, "DELIVERED");
+    case "returned":
+      return eq(orders.fulfillmentStatus, "RETURNED_TO_ORIGIN");
     case "cancelled":
       return eq(orders.fulfillmentStatus, "CANCELLED");
     default:
@@ -230,7 +240,7 @@ function filterWhere(f: OrderFilter) {
 export function listOrders(db: DB, opts: { filter: OrderFilter; q?: string; limit?: number }) {
   const q = opts.q?.trim().slice(0, 40) ?? "";
   const phone = q ? normalisePkMobile(q) : null;
-  const search = q ? or(like(orders.code, `%${q.toUpperCase().replace(/[%_]/g, "")}%`), phone ? eq(orders.guestPhone, phone) : undefined, like(orders.guestName, `%${q.replace(/[%_]/g, "")}%`)) : undefined;
+  const search = q ? or(like(orders.code, `%${q.toUpperCase().replace(/[%_]/g, "")}%`), phone ? eq(orders.guestPhone, phone) : undefined, like(orders.guestName, `%${q.replace(/[%_]/g, "")}%`), sql`EXISTS (SELECT 1 FROM shipments s WHERE s.order_id = ${ORDER_ID} AND upper(s.cn_number) = ${q.toUpperCase()})`) : undefined;
   return db
     .select({
       id: orders.id,
@@ -242,6 +252,11 @@ export function listOrders(db: DB, opts: { filter: OrderFilter; q?: string; limi
       paymentStatus: orders.paymentStatus,
       fulfillmentStatus: orders.fulfillmentStatus,
       placedAt: orders.placedAt,
+      city: sql<string | null>`json_extract(${orders.shippingAddress}, '$.city')`,
+      courier: sql<string | null>`(SELECT s.courier FROM shipments s WHERE s.order_id = ${ORDER_ID} AND s.status <> 'CANCELLED' ORDER BY s.rowid DESC LIMIT 1)`,
+      cn: sql<string | null>`(SELECT s.cn_number FROM shipments s WHERE s.order_id = ${ORDER_ID} AND s.status <> 'CANCELLED' ORDER BY s.rowid DESC LIMIT 1)`,
+      tracking: sql<string | null>`(SELECT s.last_tracking_event FROM shipments s WHERE s.order_id = ${ORDER_ID} AND s.status <> 'CANCELLED' ORDER BY s.rowid DESC LIMIT 1)`,
+      shipmentStatus: sql<string | null>`(SELECT s.status FROM shipments s WHERE s.order_id = ${ORDER_ID} AND s.status <> 'CANCELLED' ORDER BY s.rowid DESC LIMIT 1)`,
     })
     .from(orders)
     .where(and(eq(orders.channel, "ONLINE"), filterWhere(opts.filter), search))
