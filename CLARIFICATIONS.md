@@ -201,3 +201,23 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q72 | Undo a booking | **Cancel booking** while the courier hasn't picked the parcel up (shipment still Booked): the courier booking is cancelled through the API (for API bookings) and the order goes back to Packed. |
 | Q73 | Labels and load sheets | Every shipment gets a printable **100 × 150 mm label** (sender, receiver, CN barcode, COD amount or "Paid — collect nothing") and a **packing slip**; works with pasted CNs too. API bookings also link the courier's own slip / airway bill. **Load sheet**: a printable list of parcels handed to a courier's rider with COD totals and signature lines; PostEx's own load-sheet PDF too when its key is set. |
 | Q74 | Who can do all this | OWNER and MANAGER (the existing `orders` module), COD remittance included. |
+
+## Q. Milestone 11 — returns & warranty (2026-10-22) — ★ defaults used until you say otherwise
+
+| Q | Question | ★ Default used |
+|---|---|---|
+| Q75 | Who handles returns? | OWNER and MANAGER (spec §7). Cashiers can't open any returns page; a counter return waits for a manager. |
+| Q76 | "Changed my mind" returns | Accepted for **7 days** after delivery (online) or sale (counter); later needs a written reason to approve. Faults need an active warranty on every returned item. Constant `CHANGE_OF_MIND_DAYS`. |
+| Q77 | Delivery charges on a refund | Refunded (with the COD fee) only for dead on arrival, wrong item, damaged in transit — once per order, ticked by staff. |
+| Q78 | Physically damaged items | No warranty (Q11). Approving needs a written reason, except "damaged in transit" (the courier's fault). |
+| Q79 | Where does a faulty unit go? | Never back on sale. Becomes a supplier claim (unit cost × qty); no stock movement because the unit never re-entered stock. Supplier defaults to the newest PO that received the colour; staff can pick another. |
+| Q80 | Good unit returned | Back on sale as `REPAIR_RETURN` at the original unit cost, at approval time only. |
+| Q81 | Replacement | Leaves stock as a `MANUAL_ADJUST` row linked to the return (not a sale, so it isn't counted in sales velocity). If there is none in stock the approval fails — restock the good unit first or refund. |
+| Q82 | Refund amount | Price paid after the order discount (and coupon), per unit; staff may give less with a written reason, never more. |
+| Q83 | Refund payout | Recorded by staff (cash, or wallet / bank with a unique transaction ID). Nothing is sent automatically. |
+| Q84 | Order payment status | `PARTIALLY_REFUNDED` / `REFUNDED` from `PAID` or `COD_REMITTED`; COD cash still with the courier keeps its COD status. |
+| Q85 | Store credit | A note / voucher number is recorded; there is no credit balance until customer accounts exist. |
+| Q86 | Cash refunds at the till | Counted on End of day (managers / owner) and subtracted from "cash in drawer". |
+| Q87 | Counter "void" | A counter sale is undone by a return (reason "changed mind", cash refund) — there is no separate void. |
+| Q88 | Customer emails for returns | Not sent in M11. |
+

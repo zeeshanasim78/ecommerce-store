@@ -1,0 +1,3 @@
+{
+  "/(storefront)/order/[code]/pdf/route": "app/(storefront)/order/[code]/pdf/route.js"
+}

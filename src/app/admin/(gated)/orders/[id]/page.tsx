@@ -16,6 +16,7 @@ import { formatKarachi } from "@/lib/time";
 import { requireStaff } from "@/server/dal";
 import { orderEmailLog } from "@/server/notify/order-emails";
 import { COURIER_LABEL, loadCustomerOrder, orderPayment } from "@/server/orders/order-details";
+import { REASON_LABEL, STATUS_LABEL as RETURN_STATUS_LABEL, returnsForOrder } from "@/server/returns/returns";
 import { MANUAL_METHODS } from "@/server/settings/store-settings";
 import { bookAction, cancelAction, cancelBookingAction, confirmPaymentAction, deliveredAction, dispatchAction, inTransitAction, packAction, proofReceivedAction, receiveReturnAction, refreshTrackingAction, resendEmailAction } from "../actions";
 
@@ -76,6 +77,7 @@ export default async function OrderAdminPage({ params, searchParams }: { params:
   if (!o) notFound();
   const pay = orderPayment(db, id);
   const emails = orderEmailLog(db, id);
+  const orderReturns = returnsForOrder(db, id);
   const history = db
     .select({
       action: adminAuditLog.action,
@@ -497,6 +499,30 @@ export default async function OrderAdminPage({ params, searchParams }: { params:
                   </div>
                 </form>
               </details>
+            </Section>
+          ) : null}
+
+          {o.statusLabel === "Delivered" || orderReturns.length > 0 ? (
+            <Section title="Returns & warranty" description="A faulty or unwanted item that reached the customer. (A parcel that came back to the shop is handled above, not here.)">
+              {orderReturns.length > 0 ? (
+                <ul className="flex flex-col gap-1 text-[0.9375rem]">
+                  {orderReturns.map((r) => (
+                    <li key={r.id}>
+                      <Link href={`/admin/returns/${r.id}`} className="font-semibold underline">
+                        {r.code}
+                      </Link>{" "}
+                      · {REASON_LABEL[r.reason]} · {RETURN_STATUS_LABEL[r.status]}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {o.statusLabel === "Delivered" ? (
+                <div>
+                  <ButtonLink href={`/admin/returns/new?order=${encodeURIComponent(o.code)}`} variant="outline" size="sm">
+                    Start a return
+                  </ButtonLink>
+                </div>
+              ) : null}
             </Section>
           ) : null}
 

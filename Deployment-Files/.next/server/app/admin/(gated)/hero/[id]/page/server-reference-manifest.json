@@ -1,0 +1,82 @@
+{
+  "node": {
+    "003724ef2ca2ac0cf9545526bde7ad07c79ef89880": {
+      "workers": {
+        "app/admin/(gated)/hero/[id]/page": {
+          "moduleId": 52491,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "signOut",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "6043a8e77d5ec5c445f09ba4fbd9a754c0e5d9f12f": {
+      "workers": {
+        "app/admin/(gated)/hero/[id]/page": {
+          "moduleId": 52491,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "signInWithPassword",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "60b66e4c01c1fe16f2b6d8e85a110c3438872b7e61": {
+      "workers": {
+        "app/admin/(gated)/hero/[id]/page": {
+          "moduleId": 52491,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "verifySignInCode",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "405ab8409b87c0c20291951f19ff294e60da3359de": {
+      "workers": {
+        "app/admin/(gated)/hero/[id]/page": {
+          "moduleId": 52491,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "toggleSlide",
+      "filename": "src/app/admin/(gated)/hero/actions.ts"
+    },
+    "4088327b6bb0676fa32d07db7702f9a3306e687a98": {
+      "workers": {
+        "app/admin/(gated)/hero/[id]/page": {
+          "moduleId": 52491,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "deleteSlide",
+      "filename": "src/app/admin/(gated)/hero/actions.ts"
+    },
+    "40dfe7a27242e891c538fa575e37372719bce73dcc": {
+      "workers": {
+        "app/admin/(gated)/hero/[id]/page": {
+          "moduleId": 52491,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "moveSlide",
+      "filename": "src/app/admin/(gated)/hero/actions.ts"
+    },
+    "40e89235ac359cd714e39d53ebc42e761e50f02a98": {
+      "workers": {
+        "app/admin/(gated)/hero/[id]/page": {
+          "moduleId": 52491,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "saveSlide",
+      "filename": "src/app/admin/(gated)/hero/actions.ts"
+    }
+  },
+  "edge": {}
+}

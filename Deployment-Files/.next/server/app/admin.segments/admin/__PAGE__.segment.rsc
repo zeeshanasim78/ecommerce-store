@@ -1,0 +1,24 @@
+1:"$Sreact.fragment"
+3:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+8:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"ViewportBoundary"]
+9:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"MetadataBoundary"]
+a:I[27201,["/_next/static/chunks/3fntmmi971322.js"],"IconMark"]
+c:I[39756,["/_next/static/chunks/3fntmmi971322.js"],"default"]
+d:I[37457,["/_next/static/chunks/3fntmmi971322.js"],"default"]
+10:I[22016,["/_next/static/chunks/3fntmmi971322.js","/_next/static/chunks/0axdrs6tow-4n.js"],""]
+:HL["/_next/static/chunks/18_wqr-nqjetc.css","style"]
+7:X
+f:X
+f:C
+0:{"buildId":"7bUxZrO0opDQ137dLDwPk","data":[{"rsc":["$","$1","c",{"children":["$L2",null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":["$","$1","h",{"children":[null,["$","$L8",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#0B1C33"}]]}],["$","div",null,{"hidden":true,"children":["$","$L9",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Caidea — Original and compatible phone screens in Pakistan"}],["$","meta","1",{"name":"description","content":"OLED, AMOLED and LCD replacement display assemblies for Samsung, Apple, Xiaomi, Oppo, Vivo, Infinix and Tecno, delivered across Pakistan."}],["$","link","2",{"rel":"icon","href":"/favicon.ico?favicon.2vob68tjqpejf.ico","sizes":"256x256","type":"image/x-icon"}],["$","$La","3",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"isPartial":"$@b","staleTime":"$7","varyParams":null},{"rsc":["$","$1","c",{"children":[null,["$","$Lc",null,{"parallelRouterKey":"children","template":["$","$Ld",null,{}]}]]}],"isPartial":"$@e","staleTime":"$7","varyParams":"$f"},{"rsc":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/18_wqr-nqjetc.css","precedence":"next"}],["$","script","script-0",{"src":"/_next/static/chunks/3fntmmi971322.js","async":true}]],["$","html",null,{"lang":"en-PK","className":"epilogue_f3832dbe-module__PZtmaG__variable plus_jakarta_sans_33e38189-module__Fk4ugW__variable","children":["$","body",null,{"className":"min-h-dvh bg-canvas font-sans text-midnight antialiased","children":["$","$Lc",null,{"parallelRouterKey":"children","template":["$","$Ld",null,{}],"notFound":[["$","main",null,{"className":"flex min-h-dvh flex-col items-center justify-center gap-6 px-4 text-center","children":[["$","span",null,{"className":"inline-flex items-center gap-2.5","children":[["$","svg",null,{"viewBox":"0 0 22 32","aria-hidden":"true","className":"h-7 w-auto","children":[["$","rect",null,{"x":"1","y":"1","width":"20","height":"30","rx":"5","fill":"none","stroke":"currentColor","strokeWidth":"2"}],["$","rect",null,{"x":"4.5","y":"4.5","width":"13","height":"23","rx":"2.5","className":"fill-amber"}],["$","rect",null,{"x":"8.5","y":"6.5","width":"5","height":"1.6","rx":"0.8","className":"fill-midnight"}]]}],["$","span",null,{"className":"font-display text-[1.375rem] leading-none font-bold tracking-[-0.02em]","children":"Caidea"}]]}],["$","h1",null,{"className":"text-3xl font-bold tracking-[-0.02em]","children":"We couldn’t find that page"}],["$","p",null,{"className":"max-w-md text-midnight/70","children":"The link may be old, or the page may not be published yet."}],["$","div",null,{"className":"flex flex-wrap justify-center gap-3","children":[["$","$L10",null,{"className":"inline-flex items-center justify-center gap-2 rounded-full font-sans font-semibold whitespace-nowrap transition-colors duration-150 disabled:pointer-events-none disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-terracotta bg-midnight text-canvas hover:bg-midnight/88 h-11 px-6 text-[0.9375rem]","href":"/","children":"Go to the home page"}],["$","$L10",null,{"className":"inline-flex items-center justify-center gap-2 rounded-full font-sans font-semibold whitespace-nowrap transition-colors duration-150 disabled:pointer-events-none disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-terracotta border border-midnight/20 bg-white text-midnight hover:border-midnight/45 h-11 px-6 text-[0.9375rem]","href":"/store","children":"Browse screens"}]]}]]}],[]]}]}]}]]}],"isPartial":"$@11","staleTime":"$7","varyParams":null}],"isUpgradeableISRFallback":false,"a":"$@12","rootVaryParams":null,"needsRuntimeRequest":"$@13"}
+2:E{"digest":"NEXT_REDIRECT;replace;/admin/dashboard;307;"}
+5:null
+7:300
+13:true
+7:C
+12:0
+b:"$undefined"
+e:"$undefined"
+11:"$undefined"
+6:"$undefined"

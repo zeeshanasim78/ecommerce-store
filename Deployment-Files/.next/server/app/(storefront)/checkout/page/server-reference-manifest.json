@@ -1,0 +1,27 @@
+{
+  "node": {
+    "40b8c04ca52855c1fafd94ea21375d3bab0a52c403": {
+      "workers": {
+        "app/(storefront)/checkout/page": {
+          "moduleId": 69922,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "getCartQuote",
+      "filename": "src/app/(storefront)/cart/actions.ts"
+    },
+    "401aabf4799f04694289642d89a9b80324483f00fc": {
+      "workers": {
+        "app/(storefront)/checkout/page": {
+          "moduleId": 69922,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "placeOrderAction",
+      "filename": "src/app/(storefront)/checkout/actions.ts"
+    }
+  },
+  "edge": {}
+}

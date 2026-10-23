@@ -1,0 +1,60 @@
+{
+  "node": {
+    "003724ef2ca2ac0cf9545526bde7ad07c79ef89880": {
+      "workers": {
+        "app/admin/(gated)/promotions/new/page": {
+          "moduleId": 45315,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "signOut",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "6043a8e77d5ec5c445f09ba4fbd9a754c0e5d9f12f": {
+      "workers": {
+        "app/admin/(gated)/promotions/new/page": {
+          "moduleId": 45315,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "signInWithPassword",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "60b66e4c01c1fe16f2b6d8e85a110c3438872b7e61": {
+      "workers": {
+        "app/admin/(gated)/promotions/new/page": {
+          "moduleId": 45315,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "verifySignInCode",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "40250316f3e7abbadd9ce37a39a83b0ce90924eb46": {
+      "workers": {
+        "app/admin/(gated)/promotions/new/page": {
+          "moduleId": 45315,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "deletePromotion",
+      "filename": "src/app/admin/(gated)/promotions/actions.ts"
+    },
+    "40b41ae11c6a196a711d5daf01c7b3617c27af37f7": {
+      "workers": {
+        "app/admin/(gated)/promotions/new/page": {
+          "moduleId": 45315,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "savePromotion",
+      "filename": "src/app/admin/(gated)/promotions/actions.ts"
+    }
+  },
+  "edge": {}
+}

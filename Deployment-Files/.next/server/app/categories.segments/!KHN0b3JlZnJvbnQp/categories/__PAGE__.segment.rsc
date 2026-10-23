@@ -1,0 +1,21 @@
+1:"$Sreact.fragment"
+2:I[22016,["/_next/static/chunks/3fntmmi971322.js","/_next/static/chunks/35t0fwtkwwthu.js"],""]
+3:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+8:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"ViewportBoundary"]
+9:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"MetadataBoundary"]
+a:I[27201,["/_next/static/chunks/3fntmmi971322.js"],"IconMark"]
+c:I[39756,["/_next/static/chunks/3fntmmi971322.js"],"default"]
+d:I[37457,["/_next/static/chunks/3fntmmi971322.js"],"default"]
+7:X
+f:X
+f:C
+0:{"buildId":"7bUxZrO0opDQ137dLDwPk","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-14","children":[["$","h1",null,{"className":"text-[2.25rem] leading-tight font-bold tracking-[-0.03em] md:text-[3rem]","children":"Categories"}],["$","p",null,{"className":"mt-3 max-w-2xl text-lg text-midnight/75","children":"Browse screens by display type and part."}],["$","ul",null,{"className":"mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3","children":[["$","li","oled-amoled",{"children":["$","$L2",null,{"href":"/store?category=oled-amoled","className":"group flex h-full flex-col rounded-bezel bg-white p-7 ring-1 ring-midnight/8 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-28px_rgb(11_28_51/0.45)]","children":[["$","span",null,{"className":"font-display text-xl font-bold","children":"OLED & AMOLED screens"}],["$","span",null,{"className":"mt-2 text-midnight/70","children":"Deep blacks and in-display fingerprint support on most models."}],["$","span",null,{"className":"mt-6 text-sm font-semibold","children":[6," screen","s"]}]]}]}],["$","li","lcd",{"children":["$","$L2",null,{"href":"/store?category=lcd","className":"group flex h-full flex-col rounded-bezel bg-white p-7 ring-1 ring-midnight/8 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-28px_rgb(11_28_51/0.45)]","children":[["$","span",null,{"className":"font-display text-xl font-bold","children":"LCD & Incell screens"}],["$","span",null,{"className":"mt-2 text-midnight/70","children":"Dependable, budget-friendly replacements for everyday phones."}],["$","span",null,{"className":"mt-6 text-sm font-semibold","children":[6," screen","s"]}]]}]}]]}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":["$","$1","h",{"children":[null,["$","$L8",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#0B1C33"}]]}],["$","div",null,{"hidden":true,"children":["$","$L9",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Categories | Caidea"}],["$","meta","1",{"name":"description","content":"OLED, AMOLED and LCD replacement display assemblies for Samsung, Apple, Xiaomi, Oppo, Vivo, Infinix and Tecno, delivered across Pakistan."}],["$","link","2",{"rel":"icon","href":"/favicon.ico?favicon.2vob68tjqpejf.ico","sizes":"256x256","type":"image/x-icon"}],["$","$La","3",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"isPartial":"$@b","staleTime":"$7","varyParams":null},{"rsc":["$","$1","c",{"children":[null,["$","$Lc",null,{"parallelRouterKey":"children","template":["$","$Ld",null,{}]}]]}],"isPartial":"$@e","staleTime":"$7","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+5:null
+11:true
+7:300
+7:C
+10:0
+b:"$undefined"
+e:"$undefined"
+6:"$undefined"

@@ -1,0 +1,27 @@
+{
+  "node": {
+    "60a6c60c3e104de57a09cb9fd186b11337de259b05": {
+      "workers": {
+        "app/(storefront)/order/[code]/page": {
+          "moduleId": 55922,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "addTransactionId",
+      "filename": "src/app/(storefront)/order/actions.ts"
+    },
+    "607a102a777b460114029d3a428b57d68feefd24c0": {
+      "workers": {
+        "app/(storefront)/order/[code]/page": {
+          "moduleId": 55922,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "lookupOrder",
+      "filename": "src/app/(storefront)/order/actions.ts"
+    }
+  },
+  "edge": {}
+}

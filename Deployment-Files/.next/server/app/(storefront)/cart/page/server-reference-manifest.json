@@ -1,0 +1,16 @@
+{
+  "node": {
+    "40b8c04ca52855c1fafd94ea21375d3bab0a52c403": {
+      "workers": {
+        "app/(storefront)/cart/page": {
+          "moduleId": 72283,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "getCartQuote",
+      "filename": "src/app/(storefront)/cart/actions.ts"
+    }
+  },
+  "edge": {}
+}

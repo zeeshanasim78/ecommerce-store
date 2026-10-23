@@ -1,0 +1,3 @@
+module.exports=[28707,a=>{"use strict";var b=a.i(87924);a.s(["SelectAll",0,function({name:a,label:c="Tick all"}){return(0,b.jsx)("input",{type:"checkbox","aria-label":c,title:c,className:"size-5 accent-midnight",onChange:b=>{let c=b.currentTarget.form;if(c)for(let d of c.querySelectorAll(`input[type=checkbox][name="${a}"]`))d.checked=b.currentTarget.checked}})}])}];
+
+//# sourceMappingURL=src_components_admin_select-all_tsx_0ucv5xj._.js.map

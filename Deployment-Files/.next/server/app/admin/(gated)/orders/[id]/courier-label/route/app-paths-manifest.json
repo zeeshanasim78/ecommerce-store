@@ -1,0 +1,3 @@
+{
+  "/admin/(gated)/orders/[id]/courier-label/route": "app/admin/(gated)/orders/[id]/courier-label/route.js"
+}

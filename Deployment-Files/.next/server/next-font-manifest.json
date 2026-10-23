@@ -1,0 +1,219 @@
+{
+  "app": {
+    "[project]/src/app/(auth)/login/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/cart/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/categories/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/checkout/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/checkout/success/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/deals/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/order/[code]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/order/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/store/[slug]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/(storefront)/store/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/_not-found/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/brands/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/categories/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/counter-sale/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/counter-sale/receipt/[code]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/counter-sale/summary/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/coupons/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/coupons/new/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/coupons/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/dashboard/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/hero/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/hero/new/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/hero/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/home/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/couriers/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/labels/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/load-sheets/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/load-sheets/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/remittance/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/orders/remittance/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/products/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/products/import/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/products/new/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/products/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/promotions/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/promotions/new/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/promotions/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/purchase-orders/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/purchase-orders/[id]/print/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/purchase-orders/new/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/purchase-orders/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/settings/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/stock-ledger/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/technicians/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/vendors/[id]/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/vendors/new/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/(gated)/vendors/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/admin/setup-2fa/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ],
+    "[project]/src/app/dev/ui/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

@@ -384,6 +384,10 @@ Create RMA from an order → automatic warranty check (`warranty_until`) → ins
 
 **Done when:** a resellable return increases stock with a `REPAIR_RETURN` ledger row; a defective one does **not** increase sellable stock and appears under the vendor's claims.
 
+> ✅ **Built (2026-10-22, v1.16).** SPECIFICATION §28, defaults Q75–Q88. Admin → Sales: **Returns**, **Warranty check**; Admin → Stock: **Supplier claims**. Logic in `src/server/returns/` (30 unit tests + 4 `db:verify` guards). Checked in a production build with a 2FA owner and cashier: counter sale → warranty check → return → inspect → approve → cash refund → claim sent and credited; a good unit came back on sale (`REPAIR_RETURN`), the faulty one did not; End of day shows the cash refund; cashier blocked from every returns page; 375 px clean.
+>
+> **For M12:** return refunds = `returns.refund_paisa` where `refunded_at` is set (by `refund_method`); write-off cost = `return_items` with disposition `WRITE_OFF` × `order_items.unit_cost_paisa`; supplier claims = `vendor_claims` (`claimTotals()`); sales velocity should net `REPAIR_RETURN` (spec §6.6). Replacement units are `MANUAL_ADJUST` rows with `reference_type = 'RETURN'`.
+
 ---
 
 ## Milestone 12 — Dashboard & reports *(3 days)* — Spec §6.6, §7
@@ -486,7 +490,7 @@ Playwright: browse → add to cart → COD checkout; manual TID checkout + admin
 | 2 | M4–M5 |
 | 3–4 | M6–M7 |
 | 5 | M8–M9 |
-| 6 | M10–M11 |
+| 6 | M10–M11 ✅ |
 | 7 | M12–M13 |
 | 8 | M14–M16 |
 | 9 | M17–M19 |

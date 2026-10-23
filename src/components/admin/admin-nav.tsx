@@ -17,6 +17,8 @@ const GROUPS: { heading: string; items: Item[] }[] = [
       { href: "/admin/orders", label: "Online orders", module: "orders" },
       { href: "/admin/orders/remittance", label: "COD remittance", module: "orders" },
       { href: "/admin/orders/couriers", label: "Couriers", module: "orders" },
+      { href: "/admin/returns", label: "Returns", module: "returns" },
+      { href: "/admin/returns/warranty", label: "Warranty check", module: "returns" },
       { href: "/admin/technicians", label: "Technicians", module: "technicians" },
     ],
   },
@@ -43,13 +45,13 @@ const GROUPS: { heading: string; items: Item[] }[] = [
       { href: "/admin/purchase-orders", label: "Purchase orders", module: "purchasing" },
       { href: "/admin/vendors", label: "Vendors", module: "vendors" },
       { href: "/admin/stock-ledger", label: "Stock ledger", module: "ledger" },
+      { href: "/admin/returns/claims", label: "Supplier claims", module: "returns" },
     ],
   },
   { heading: "Shop", items: [{ href: "/admin/settings", label: "Shop settings", module: "settings" }] },
   {
     heading: "Coming next",
     items: [
-      { href: "#", label: "Returns", milestone: "M11" },
       { href: "#", label: "Reports", milestone: "M12" },
       { href: "#", label: "Blog & testimonials", milestone: "M13" },
     ],

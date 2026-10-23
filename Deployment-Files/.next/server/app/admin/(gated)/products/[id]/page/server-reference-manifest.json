@@ -1,0 +1,137 @@
+{
+  "node": {
+    "003724ef2ca2ac0cf9545526bde7ad07c79ef89880": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "signOut",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "6043a8e77d5ec5c445f09ba4fbd9a754c0e5d9f12f": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "signInWithPassword",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "60b66e4c01c1fe16f2b6d8e85a110c3438872b7e61": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "verifySignInCode",
+      "filename": "src/app/(auth)/login/actions.ts"
+    },
+    "403b685483ddecb9476643042fa720e6711196b5a3": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "updateImage",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "40400152d1dc00c2bb10b73d239f567bb8089ce30d": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "saveProduct",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "40447eeac3ed27953ae17612b2cb7513729c3e7de8": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "changeStock",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "404b55d29587441514f7f5901eff6fdb5992a137b7": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "importProducts",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "4065e25dc1ed6fcded9a33a768f29aeda22274aa29": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "moveImage",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "406f2c1f3d2b7ab9e68e8dac843a317695ff67cba4": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "setArchived",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "409ed20cf13fa0c25da822aba0ccd70eecb92ab653": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "uploadImages",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "40bce639f04cd9095a290452524811862ec15422d8": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "addVariant",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    },
+    "40fa8f47efd474eef5705439bb88e4b1d1df09f0a1": {
+      "workers": {
+        "app/admin/(gated)/products/[id]/page": {
+          "moduleId": 62098,
+          "async": true,
+          "codeHash": null
+        }
+      },
+      "exportedName": "deleteImage",
+      "filename": "src/app/admin/(gated)/products/actions.ts"
+    }
+  },
+  "edge": {}
+}

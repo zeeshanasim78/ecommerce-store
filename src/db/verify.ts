@@ -134,6 +134,26 @@ mustFail("Load sheet with no parcels", "INSERT INTO load_sheets (id, code, couri
 mustFail("Remittance row with an unknown result", "INSERT INTO cod_remittance_lines (id, remittance_id, row_no, cn, amount_paisa, result) VALUES ('l1', 'none', 1, 'X', 1, 'MAYBE')");
 mustFail("Remittance with a negative amount", "INSERT INTO cod_remittance_lines (id, remittance_id, row_no, cn, amount_paisa, result) VALUES ('l1', 'none', 1, 'X', -5, 'MATCH')");
 
+console.log("\nReturns and warranty (v1.16, M11)");
+mustFail("Return with an unknown reason", "INSERT INTO returns (id, code, order_id, reason, within_warranty) VALUES ('r1', 'RMA-VERIFY', 'none', 'BORED', 1)");
+mustFail("Return with an unknown refund method", "INSERT INTO returns (id, code, order_id, reason, within_warranty, refund_method) VALUES ('r1', 'RMA-VERIFY', 'none', 'TOUCH_FAULT', 1, 'BITCOIN')");
+mustFail("Supplier claim with a negative amount", "INSERT INTO vendor_claims (id, vendor_id, return_item_id, claim_paisa) VALUES ('c1', 'none', 'none', -1)");
+// Returning more units than were bought: build a one-unit sale inside the savepoint, then try to return two
+sqlite.exec("SAVEPOINT verify");
+try {
+  sqlite.prepare("INSERT INTO orders (id, code, channel, subtotal_paisa, total_paisa, payment_method, idempotency_key, guest_phone) VALUES ('ov', 'CA-VERIFY', 'COUNTER', 100, 100, 'CASH', 'verify-key', '+923000000000')").run();
+  sqlite.prepare("INSERT INTO order_items (id, order_id, variant_id, product_snapshot, quantity, unit_price_paisa, unit_cost_paisa, line_total_paisa) VALUES ('oiv', 'ov', ?, '{}', 1, 100, 50, 100)").run(row.id);
+  sqlite.prepare("INSERT INTO returns (id, code, order_id, reason, within_warranty) VALUES ('rv', 'RMA-VERIFY', 'ov', 'TOUCH_FAULT', 1)").run();
+  try {
+    sqlite.prepare("INSERT INTO return_items (id, return_id, order_item_id, quantity) VALUES ('riv', 'rv', 'oiv', 2)").run();
+    fail("Returning more units than were bought — was allowed, but should have been blocked");
+  } catch (error) {
+    pass(`Returning more units than were bought — blocked (${(error as Error).message})`);
+  }
+} finally {
+  sqlite.exec("ROLLBACK TO verify; RELEASE verify");
+}
+
 console.log("\nLedger invariant (spec §6.5): SUM(quantity_changed) = current_stock for every variant");
 const drift = findLedgerDrift(db);
 if (drift.length === 0) pass("All variants reconcile with their ledger");

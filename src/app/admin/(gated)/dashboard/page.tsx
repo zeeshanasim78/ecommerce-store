@@ -1,5 +1,7 @@
 import { orderCounts } from "@/server/orders/admin-orders";
 import { codOutstanding } from "@/server/orders/cod-remittance";
+import { returnCounts } from "@/server/returns/returns";
+import { claimTotals } from "@/server/returns/vendor-claims";
 import Link from "next/link";
 import { and, asc, count, eq, gt, isNull, lte, sql } from "drizzle-orm";
 import { AdminHeader, Notice } from "@/components/admin/ui";
@@ -25,6 +27,7 @@ const DENIED: Record<string, string> = {
   orders: "Your role can’t manage online orders.",
   counter: "Your role can’t use the counter till.",
   technicians: "Only a manager or the owner can approve technicians.",
+  returns: "Only a manager or the owner can handle returns.",
   settings: "Only the owner can change shop settings.",
 };
 
@@ -42,6 +45,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const codOwed = canAccess(staff.role, "orders") ? codOutstanding(db).totalOwedPaisa : 0;
   // v1.13 (M9): today's counter takings — a cashier sees only their own (spec §7 Dashboard)
   const counterToday = canAccess(staff.role, "counter") ? counterDaySummary(db, { date: karachiDate(new Date()), cashierId: canAccess(staff.role, "technicians") ? undefined : staff.id }).all : null;
+  // v1.16 (M11): returns waiting for a step, refunds not yet paid, supplier claims not yet credited
+  const returnsToDo = canAccess(staff.role, "returns") ? { ...returnCounts(db), ...claimTotals(db) } : null;
   const techniciansWaiting = canAccess(staff.role, "technicians") ? listTechnicians(db, { status: "PENDING" }).length : 0;
   const stats = [
     { label: "Published products", value: one(db.select({ n: count() }).from(products).where(and(eq(products.isPublished, true), isNull(products.archivedAt))).all()), href: "/admin/products" },
@@ -86,6 +91,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <span className="tabular">{ordersToDo.book} to book</span>
           <span className="tabular">{ordersToDo.courier} with couriers</span>
           <span className="ml-auto underline underline-offset-4">Open orders</span>
+        </Link>
+      ) : null}
+      {returnsToDo && returnsToDo.OPEN + returnsToDo.open + returnsToDo.sent > 0 ? (
+        <Link href="/admin/returns" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-bezel bg-white px-6 py-4 font-medium ring-1 ring-midnight/8">
+          <span className="font-semibold">Returns</span>
+          <span className="tabular">{returnsToDo.OPEN} open</span>
+          <span className="tabular">{returnsToDo.REFUND_DUE} refund{returnsToDo.REFUND_DUE === 1 ? "" : "s"} to pay</span>
+          <span className="tabular">{returnsToDo.open + returnsToDo.sent} supplier claim{returnsToDo.open + returnsToDo.sent === 1 ? "" : "s"} open ({formatMoney(paisa(returnsToDo.owedPaisa))})</span>
+          <span className="ml-auto underline underline-offset-4">Open returns</span>
         </Link>
       ) : null}
       {codOwed > 0 ? (

@@ -1,11 +1,11 @@
-# Caidea — handoff notes (as of v1.15, 2026-10-17)
+# Caidea — handoff notes (as of v1.16, 2026-10-22)
 
-Read this first in a new chat, then SPECIFICATION.md (v1.15), BUILD_GUIDE.md and CLARIFICATIONS.md.
+Read this first in a new chat, then SPECIFICATION.md (v1.16), BUILD_GUIDE.md and CLARIFICATIONS.md.
 
 ## Where the build stands
-- Done: Milestones 1–10 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 complete** (Phase A Online orders v1.11; **Phase B v1.15**: pack, courier booking, tracking, delivered, returned parcels, labels, load sheets, COD remittance).
-- Next: **M11 Returns & warranty** (must also handle counter sales — see BUILD_GUIDE "For M11" under M9 and M10; delivered online items now have `warranty_until`).
-- Last delivered: `caidea-v1.15.zip` (§27: M10 Phase B). The zip has no `.git` folder; commit it in your own copy as `v1.15: M10 Phase B — couriers, labels, tracking, returns to shop, COD remittance`. (v1.14 = hero animations §26; v1.13 = M9 counter sale §25.)
+- Done: Milestones 1–11 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 complete** (Phase A Online orders v1.11; Phase B v1.15: pack, courier booking, tracking, delivered, returned parcels, labels, load sheets, COD remittance), **Milestone 11 complete (v1.16: returns & warranty)**.
+- Next: **M12 Dashboard & reports** (BUILD_GUIDE; see its "For M12" notes under M9, M10 and M11).
+- Last delivered: `caidea-v1.16.zip` (§28: M11 Returns & warranty). The zip has no `.git` folder; commit it in your own copy as `v1.16: M11 — returns, warranty check, refunds, supplier claims`. (v1.15 = M10 Phase B; v1.14 = hero animations; v1.13 = M9 counter sale.)
 - Go-live checklist (shared doc, tick as you go): https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e
 
 ## Stack
@@ -37,7 +37,9 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Migration timestamps: Drizzle skips a migration whose `when` is older than the last applied one. 0007 was stamped ahead of real time, so 0008 is stamped after it; `tests/unit/constitution.test.ts` now fails if the order is ever wrong. When you generate 0009, check its `when` in `drizzle/meta/_journal.json` is larger than 0008's (`1791187967456`), or bump it.
 
 - v1.15 (M10 Phase B, §27; ★ defaults Q65–Q74): order steps **Mark packed → Book with courier → On the way → Mark delivered**, or **Receive returned parcel** (good items back on sale via `ORDER_CANCEL_RESTOCK`, damaged kept off with a note). **Leopards + PostEx adapters** in `src/server/couriers/` — off until keys are in the environment file (`LEOPARDS_API_KEY/_PASSWORD/_MODE` (staging first), `POSTEX_API_TOKEN`, `POSTEX_PICKUP_ADDRESS_CODE`); built from the couriers' published client libraries, **confirm with sandbox keys** (Admin → Couriers → Test connection). Pasting a CN by hand always works. Courier calls never happen inside a stock transaction (constitution test). Tracking: `/api/cron/sync-tracking` every 2 h + Refresh buttons; never restocks on its own. Labels 100 × 150 mm with Code 128 barcodes (`src/lib/code128.ts`), packing slips, load sheets (`LS-YYMMDD-NN`). **COD remittance**: upload the courier's payment CSV → matched by CN → confirm → `COD_REMITTED` (differences only with a ticked reason). Delivery sets `warranty_until`. Migration 0009 (new tables `courier_cities`, `load_sheets`, `cod_remittances`, `cod_remittance_lines`; shipment columns). Order filters changed: To pack / Packed — book courier / With courier / Delivered / Returned to us. Test courier: `tests/helpers/fake-courier.ts` (`COURIER_TEST_BASE_URL`, localhost only).
-- Migration timestamps: 0009's `when` is `1792181203128` (after 0008). Check the next one is larger.
+- Migration timestamps: 0010's `when` is `1792668266049` (after 0009's `1792181203128`). Check the next one (0011) is larger.
+
+- v1.16 (M11, §28; ★ defaults Q75–Q88): **Returns** (OWNER/MANAGER, module `returns`) from a delivered online order or any paid counter sale: open → received → inspected → approved (refund / replacement / store credit) or rejected → refund paid → closed. Warranty: faults need an active `warranty_until` on every returned item; "changed my mind" 7 days. Stock only at approval via the engine: good → `REPAIR_RETURN`; faulty → NO stock, an open **supplier claim** (Admin → Stock → Supplier claims: sent → credited / rejected); damaged → write-off; replacement → `MANUAL_ADJUST` out linked to the return. Over-return blocked in code + trigger. Refund payout is recorded by staff (cash, or wallet/bank with a unique reference); order payment → `PARTIALLY_REFUNDED`/`REFUNDED` (COD still with the courier keeps its status). Cash refunds show on End of day; dashboard banner; order page lists returns. Logic `src/server/returns/{returns,vendor-claims}.ts`; migration 0010 (rebuilds the three returns tables — they were empty).
 
 ## Working rules from the owner
 - Before any change, check it against the specification; if it conflicts, offer options and apply the owner's choice.
@@ -45,6 +47,8 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Ask about major decisions with options; otherwise keep going.
 
 ## Open items for the owner
+- (v1.16) Confirm or change the M11 defaults Q75–Q88 (CLARIFICATIONS §Q) — especially: 7-day change-of-mind window, delivery charges refunded only for our faults, faulty units go to supplier claims (never back on sale), store credit is only a noted voucher, no customer emails for returns, cashiers can't take returns.
+- (v1.16) Write your return policy page (M13) to match these rules; the go-live checklist already lists it.
 - Replace sample figures "48,000+ screens sold" and "1,200+ repair shops" in Admin → Home page.
 - Sample prices, photos, promotion and coupons are placeholders.
 - Some internal SKUs still contain "AAA" (never shown to shoppers).
@@ -59,8 +63,11 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Set the **sales email** and WhatsApp in Shop settings, and on the live server set `BETTER_AUTH_URL` to the real https address (email links use it; Shop settings warns while it's localhost).
 - Performance note: the home page's JavaScript is ~185 KB gzip, mostly the Next.js/React framework, which was already over the §12 100 KB target before v1.11 (v1.11 added 268 bytes). Review in M17.
 - Schedule `/api/cron/expire-unpaid` (every 15 min) and `/api/cron/sync-tracking` (every 2 hours, v1.15) when the shop server is set up (M18).
-- (v1.13) Counter: decide whether managers should also take wallet/card payments (currently owner only, per your answer), set up the receipt printer on the till PC (80 mm roll; `--kiosk-printing` for no dialog), create a CASHIER login for each person at the till, register your regular technicians. Undo/refund of a counter sale comes with M11 Returns.
+- (v1.13) Counter: decide whether managers should also take wallet/card payments (currently owner only, per your answer), set up the receipt printer on the till PC (80 mm roll; `--kiosk-printing` for no dialog), create a CASHIER login for each person at the till, register your regular technicians. A counter sale is undone through Returns (v1.16): reason "changed mind", cash refund (Q87).
 - Before go-live: enter real opening stock by counting each colour (product page → Count or correct stock) or with the CSV `opening_stock` column.
+
+## Upgrading an existing copy to v1.16
+From v1.15: replace the files → `npm install` → `npm run db:migrate` (migration 0010 adds the returns columns, a supplier-claim unique index and the over-return trigger; backs up first) → `npm test` → `npm run db:verify` → `npm run build` → restart. No environment change. Then Admin → Returns (owner/manager): try a return on a test counter sale, and look at Supplier claims. From v1.14 or older, do the v1.15 steps below first.
 
 ## Upgrading an existing copy to v1.15
 From v1.14: replace the files → `npm install` → `npm run db:migrate` (migration 0009 adds the courier / load-sheet / COD remittance tables and shipment columns; backs up first) → `npm run setup:env` is not needed — add the courier lines from `.env.example` to your environment file (blank is fine until the keys arrive) → `npm test` → `npm run db:verify` → `npm run build` → restart. Then Admin → Couriers to check the status, and Online orders → To pack. No change to existing orders; orders already "Handed to the courier" can be marked delivered or tracked as before.

@@ -1,0 +1,3 @@
+{
+  "/admin/(gated)/orders/remittance/[id]/page": "app/admin/(gated)/orders/remittance/[id]/page.js"
+}

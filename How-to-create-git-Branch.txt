@@ -21,6 +21,8 @@ git log --oneline
 git switch -c MileStone-10-Testing 4d06bea
 
 
+git commit MileStone-10-Testing -am "Your commit message"
+
 3. Push to your remote repository (Optional):bash
 git push -u origin MileStone-10-Testing
 
@@ -31,11 +33,8 @@ To merge a Git branch into your main branch, follow these core steps in your ter
 1) Switch to main Run : git checkout main 
 to move to your main branch.
 
-2) Pull latest changes Run : git pull origin main 
-to make sure your local main branch is up to date with the remote repository.
-
-3) Merge your branch Run :  git merge <branch-name> 
+2 Merge your branch Run :  git merge <branch-name> 
 (replacing <branch-name> with your feature branch name) to combine the changes.
 
-4) Push to remote Run : git push origin main 
+3) Push to remote Run : git push origin main 
 to send the merged updates back to your remote repository.

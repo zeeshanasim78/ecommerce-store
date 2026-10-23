@@ -1,0 +1,11 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/src/app/admin/(gated)/purchase-orders/page": [
+      "static/media/cb065f3ef140709c-s.p.1eqdc75fykitr.woff2",
+      "static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}

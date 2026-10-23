@@ -10,6 +10,8 @@ import { purchaseOrders, vendors } from "@/db/schema";
 import { formatKarachi } from "@/lib/time";
 import { requireStaff } from "@/server/dal";
 import { lineTotals } from "@/server/purchasing/purchase-orders";
+import { claimTotals } from "@/server/returns/vendor-claims";
+import { formatMoney, paisa } from "@/lib/money";
 import { createPurchaseOrder } from "../../purchase-orders/actions";
 import { setVendorArchived } from "../actions";
 import { VendorForm } from "../vendor-form";
@@ -23,6 +25,7 @@ export default async function VendorPage({ params, searchParams }: { params: Pro
   if (!vendor) notFound();
   const pos = db.select().from(purchaseOrders).where(eq(purchaseOrders.vendorId, id)).orderBy(desc(purchaseOrders.createdAt), desc(purchaseOrders.code)).all();
   const totals = lineTotals(db, pos.map((p) => p.id));
+  const claims = claimTotals(db, id);
 
   return (
     <>
@@ -79,6 +82,15 @@ export default async function VendorPage({ params, searchParams }: { params: Pro
               </tbody>
             </Table>
           )}
+        </Section>
+
+        <Section title="Claims for faulty units" description="Units customers returned that were faulty are sent back to this supplier for credit.">
+          <p className="text-[0.9375rem]">
+            Owed to us: <strong className="tabular">{formatMoney(paisa(claims.owedPaisa))}</strong> ({claims.open} to send, {claims.sent} waiting) · credited so far: <strong className="tabular">{formatMoney(paisa(claims.creditedPaisa))}</strong> · rejected: {claims.rejected}.{" "}
+            <Link href={`/admin/returns/claims?vendor=${vendor.id}`} className="font-semibold underline">
+              See the claims
+            </Link>
+          </p>
         </Section>
 
         <VendorForm vendor={vendor} />

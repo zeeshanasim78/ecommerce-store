@@ -1,0 +1,3 @@
+{
+  "/admin/(gated)/coupons/[id]/page": "app/admin/(gated)/coupons/[id]/page.js"
+}

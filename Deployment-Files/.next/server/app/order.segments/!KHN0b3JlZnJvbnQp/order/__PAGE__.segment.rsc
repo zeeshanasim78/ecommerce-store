@@ -1,0 +1,21 @@
+1:"$Sreact.fragment"
+2:I[23838,["/_next/static/chunks/3fntmmi971322.js","/_next/static/chunks/35t0fwtkwwthu.js","/_next/static/chunks/3kav3lmjmcsdc.js"],"TrackOrder"]
+3:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+8:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"ViewportBoundary"]
+9:I[97367,["/_next/static/chunks/3fntmmi971322.js"],"MetadataBoundary"]
+a:I[27201,["/_next/static/chunks/3fntmmi971322.js"],"IconMark"]
+c:I[39756,["/_next/static/chunks/3fntmmi971322.js"],"default"]
+d:I[37457,["/_next/static/chunks/3fntmmi971322.js"],"default"]
+7:X
+f:X
+f:C
+0:{"buildId":"7bUxZrO0opDQ137dLDwPk","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-14","children":[["$","h1",null,{"className":"text-[2.25rem] leading-tight font-bold tracking-[-0.03em] md:text-[3rem]","children":"Track your order"}],["$","p",null,{"className":"mt-3 max-w-2xl text-lg text-midnight/75","children":"Enter your order number and the phone number you ordered with."}],["$","$L2",null,{}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/3kav3lmjmcsdc.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":["$","$1","h",{"children":[null,["$","$L8",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#0B1C33"}]]}],["$","div",null,{"hidden":true,"children":["$","$L9",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Track your order | Caidea"}],["$","meta","1",{"name":"description","content":"OLED, AMOLED and LCD replacement display assemblies for Samsung, Apple, Xiaomi, Oppo, Vivo, Infinix and Tecno, delivered across Pakistan."}],["$","meta","2",{"name":"robots","content":"noindex, nofollow"}],["$","link","3",{"rel":"icon","href":"/favicon.ico?favicon.2vob68tjqpejf.ico","sizes":"256x256","type":"image/x-icon"}],["$","$La","4",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"isPartial":"$@b","staleTime":"$7","varyParams":null},{"rsc":["$","$1","c",{"children":[null,["$","$Lc",null,{"parallelRouterKey":"children","template":["$","$Ld",null,{}]}]]}],"isPartial":"$@e","staleTime":"$7","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+5:null
+11:true
+7:300
+7:C
+10:0
+b:"$undefined"
+e:"$undefined"
+6:"$undefined"

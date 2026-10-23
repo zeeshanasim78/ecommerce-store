@@ -1,0 +1,16 @@
+{
+  "node": {
+    "600be4c4248e883ea5859f3458bf959e78221f2ad2": {
+      "workers": {
+        "app/admin/setup-2fa/page": {
+          "moduleId": 36541,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "enrol",
+      "filename": "src/app/admin/setup-2fa/actions.ts"
+    }
+  },
+  "edge": {}
+}

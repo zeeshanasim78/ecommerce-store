@@ -7,9 +7,10 @@ import { Table, TD, TH, THead, TR } from "@/components/ui/table";
 import { db } from "@/db/client";
 import { COUNTER_METHODS, COUNTER_METHOD_LABEL } from "@/lib/counter";
 import { TECHNICIAN_APPROVER_ROLES } from "@/lib/permissions";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, paisa } from "@/lib/money";
 import { formatKarachi } from "@/lib/time";
-import { CounterSaleError, counterDaySummary, karachiDate, recentCounterSales } from "@/server/counter/pos";
+import { CounterSaleError, counterDaySummary, karachiDate, karachiDayBounds, recentCounterSales } from "@/server/counter/pos";
+import { cashRefundsPaid } from "@/server/returns/returns";
 import { requireStaff } from "@/server/dal";
 
 export const metadata = { title: "End of day" };
@@ -36,6 +37,8 @@ export default async function CounterSummaryPage({ searchParams }: { searchParam
     date = today;
     summary = counterDaySummary(db, { date, cashierId: seesAll ? undefined : staff.id });
   }
+  // v1.16 (M11): cash paid back to customers today comes out of the drawer (managers and the owner see it)
+  const refunds = seesAll ? cashRefundsPaid(db, karachiDayBounds(date)) : { count: 0, paisa: 0 };
   const sales = recentCounterSales(db, { date, cashierId: seesAll ? undefined : staff.id, limit: 500 });
   const a = summary.all;
   const longDate = new Intl.DateTimeFormat("en-PK", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(Date.parse(`${date}T00:00:00Z`));
@@ -74,6 +77,11 @@ export default async function CounterSummaryPage({ searchParams }: { searchParam
             <Stat label="Cash in drawer" value={formatMoney(a.cashPaisa)} sub="cash sales after change, plus your opening float" dark />
             <Stat label="Discounts given" value={formatMoney(a.discountPaisa)} sub={`${a.discounts} sale${a.discounts === 1 ? "" : "s"}`} />
           </dl>
+          {refunds.count > 0 && (
+            <p className="mt-4 rounded-bezel-sm bg-terracotta/10 px-5 py-3 text-[0.9375rem] font-medium text-terracotta">
+              Cash refunds paid out today: {formatMoney(paisa(refunds.paisa))} ({refunds.count} return{refunds.count === 1 ? "" : "s"}) — take this off “Cash in drawer”: {formatMoney(paisa(Math.max(0, a.cashPaisa - refunds.paisa)))} should be left. <Link href="/admin/returns" className="underline">Returns</Link>
+            </p>
+          )}
 
           <h2 className="mt-10 text-lg font-bold">By cashier</h2>
           <div className="mt-3 overflow-x-auto">

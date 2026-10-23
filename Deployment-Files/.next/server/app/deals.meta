@@ -1,0 +1,40 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(storefront)/layout,_N_T_/(storefront)/deals/layout,_N_T_/(storefront)/deals/page,_N_T_/deals"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KHN0b3JlZnJvbnQp",
+    "/!KHN0b3JlZnJvbnQp/deals/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 32,
+        "slots": {
+          "children": {
+            "hints": 64,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/95a70ee2d5f55b1af9231861b2b9c7aa49a483e39c447df558e2a207c035f26c/$/deals",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(storefront)/deals/page"
+    },
+    "isFallback": false
+  }
+}

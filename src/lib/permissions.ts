@@ -16,6 +16,8 @@ export const MODULE_ROLES = {
   stockAdjust: ["OWNER", "MANAGER"],
   /** v1.11 (M10 Phase A): online orders — confirm payments, dispatch, cancel (spec §7, §23) */
   orders: ["OWNER", "MANAGER"],
+  /** v1.16 (M11): returns (RMA), warranty check, refunds, supplier claims — spec §7 Returns */
+  returns: ["OWNER", "MANAGER"],
   /** v1.13 (M9): counter sale (POS) and the end-of-day summary. Non-cash payments: OWNER only (see COUNTER_NON_CASH_ROLES). */
   counter: ["OWNER", "MANAGER", "CASHIER"],
   /** v1.13 (M9): approve technicians for wholesale prices */

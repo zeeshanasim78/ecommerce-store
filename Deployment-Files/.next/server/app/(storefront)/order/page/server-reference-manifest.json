@@ -1,0 +1,16 @@
+{
+  "node": {
+    "607a102a777b460114029d3a428b57d68feefd24c0": {
+      "workers": {
+        "app/(storefront)/order/page": {
+          "moduleId": 98840,
+          "async": false,
+          "codeHash": null
+        }
+      },
+      "exportedName": "lookupOrder",
+      "filename": "src/app/(storefront)/order/actions.ts"
+    }
+  },
+  "edge": {}
+}
