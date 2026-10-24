@@ -8,7 +8,10 @@ import { canAccess, type AdminModule, type StaffRole } from "@/lib/permissions";
 type Item = { href: string; label: string; module?: AdminModule; milestone?: string };
 
 const GROUPS: { heading: string; items: Item[] }[] = [
-  { heading: "Overview", items: [{ href: "/admin/dashboard", label: "Dashboard", module: "dashboard" }] },
+  { heading: "Overview", items: [
+      { href: "/admin/dashboard", label: "Dashboard", module: "dashboard" },
+      { href: "/admin/reports", label: "Reports", module: "reports" },
+    ] },
   {
     heading: "Sales",
     items: [
@@ -52,7 +55,6 @@ const GROUPS: { heading: string; items: Item[] }[] = [
   {
     heading: "Coming next",
     items: [
-      { href: "#", label: "Reports", milestone: "M12" },
       { href: "#", label: "Blog & testimonials", milestone: "M13" },
     ],
   },

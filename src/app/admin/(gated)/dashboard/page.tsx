@@ -14,6 +14,10 @@ import { canAccess, requireStaff } from "@/server/dal";
 import { getPaymentAlert } from "@/server/settings/payment-integrity";
 import { counterDaySummary, karachiDate, listTechnicians } from "@/server/counter/pos";
 import { formatMoney, paisa } from "@/lib/money";
+import { DailyChart } from "@/components/admin/charts";
+import { dashboardFigures } from "@/server/reports/dashboard";
+import { MOVEMENT_LABEL, listLedger, referenceLabel } from "@/server/inventory/ledger";
+import { formatKarachi } from "@/lib/time";
 
 export const metadata = { title: "Dashboard" };
 
@@ -28,6 +32,7 @@ const DENIED: Record<string, string> = {
   counter: "Your role can’t use the counter till.",
   technicians: "Only a manager or the owner can approve technicians.",
   returns: "Only a manager or the owner can handle returns.",
+  reports: "Only a manager or the owner can open reports.",
   settings: "Only the owner can change shop settings.",
 };
 
@@ -48,6 +53,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // v1.16 (M11): returns waiting for a step, refunds not yet paid, supplier claims not yet credited
   const returnsToDo = canAccess(staff.role, "returns") ? { ...returnCounts(db), ...claimTotals(db) } : null;
   const techniciansWaiting = canAccess(staff.role, "technicians") ? listTechnicians(db, { status: "PENDING" }).length : 0;
+  // v1.17 (M12): sales, margin and recent stock activity — owners and managers only (cashiers see their own shift above)
+  const figures = canAccess(staff.role, "reports") ? dashboardFigures(db) : null;
+  const recent = canAccess(staff.role, "ledger") ? listLedger(db, {}, { limit: 8, offset: 0 }) : [];
   const stats = [
     { label: "Published products", value: one(db.select({ n: count() }).from(products).where(and(eq(products.isPublished, true), isNull(products.archivedAt))).all()), href: "/admin/products" },
     { label: "Active hero slides", value: one(db.select({ n: count() }).from(heroSlides).where(eq(heroSlides.isActive, true)).all()), href: "/admin/hero" },
@@ -133,6 +141,31 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       ) : null}
       {paymentAlert ? <PaymentAlert alert={paymentAlert} showLink={canAccess(staff.role, "settings")} /> : null}
 
+      {figures ? (
+        <section aria-labelledby="sales-heading" className="mb-10">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="sales-heading" className="text-xl font-bold">Sales</h2>
+            <span className="flex gap-4 text-sm font-semibold">
+              {figures.reorderNow > 0 ? <Link href="/admin/reports/reorder" className="text-terracotta underline underline-offset-4">{figures.reorderNow} to reorder</Link> : null}
+              <Link href="/admin/reports" className="underline underline-offset-4">All reports</Link>
+            </span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {figures.periods.map((p) => (
+              <Card key={p.key} className="p-6">
+                <p className="text-sm font-medium text-midnight/65">{p.label}</p>
+                <p className="tabular mt-2 font-display text-3xl font-bold">{formatMoney(paisa(p.sales))}</p>
+                <p className="tabular mt-2 text-sm text-midnight/75">Online {formatMoney(paisa(p.online))} · Counter {formatMoney(paisa(p.counter))}</p>
+                <p className="tabular mt-1 text-sm text-midnight/75">{p.orders} order{p.orders === 1 ? "" : "s"} · Margin {formatMoney(paisa(p.margin))}{p.marginPct !== null ? ` (${p.marginPct}%)` : ""}</p>
+              </Card>
+            ))}
+          </div>
+          <div className="mt-4">
+            <DailyChart days={figures.chart} title="Sales per day, last 30 days" />
+          </div>
+        </section>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <Link key={s.label} href={s.href} className="group">
@@ -174,6 +207,39 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </tbody>
         </Table>
       )}
+    
+      {recent.length > 0 ? (
+        <>
+          <div className="mt-12 mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="text-xl font-bold">Recent stock activity</h2>
+            <Link href="/admin/stock-ledger" className="text-sm font-semibold underline underline-offset-4">Stock ledger</Link>
+          </div>
+          <Table>
+            <THead>
+              <tr>
+                <TH>When</TH>
+                <TH>Screen</TH>
+                <TH>Movement</TH>
+                <TH className="text-right">Change</TH>
+                <TH>Reference</TH>
+                <TH>By</TH>
+              </tr>
+            </THead>
+            <tbody>
+              {recent.map((r) => (
+                <TR key={r.id}>
+                  <TD className="whitespace-nowrap text-midnight/75">{formatKarachi(r.timestamp)}</TD>
+                  <TD><span className="font-semibold">{r.brand} {r.model}</span> <span className="text-midnight/65">{r.color}</span></TD>
+                  <TD>{MOVEMENT_LABEL[r.type]}</TD>
+                  <TD className={`tabular text-right font-semibold ${r.quantity < 0 ? "text-terracotta" : ""}`}>{r.quantity > 0 ? `+${r.quantity}` : r.quantity}</TD>
+                  <TD className="tabular text-midnight/75">{referenceLabel(r)}</TD>
+                  <TD className="text-midnight/75">{r.operatorName ?? r.operatorId}</TD>
+                </TR>
+              ))}
+            </tbody>
+          </Table>
+        </>
+      ) : null}
     </>
   );
 }

@@ -22,6 +22,8 @@ export const MODULE_ROLES = {
   counter: ["OWNER", "MANAGER", "CASHIER"],
   /** v1.13 (M9): approve technicians for wholesale prices */
   technicians: ["OWNER", "MANAGER"],
+  /** v1.17 (M12): sales, margin, stock-position, COD, cashier and purchasing reports + dashboard figures — spec §7 Reports (managers read) */
+  reports: ["OWNER", "MANAGER"],
   /** Shop settings: payment accounts, COD limit, contact numbers (spec §7 Settings — OWNER) */
   settings: ["OWNER"],
 } as const satisfies Record<string, readonly StaffRole[]>;

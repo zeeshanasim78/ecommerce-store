@@ -221,3 +221,15 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q87 | Counter "void" | A counter sale is undone by a return (reason "changed mind", cash refund) — there is no separate void. |
 | Q88 | Customer emails for returns | Not sent in M11. |
 
+## R. Milestone 12 — dashboard & reports (2026-10-24) — ★ defaults used until you say otherwise
+
+| Q | Question | ★ Default used |
+|---|---|---|
+| Q89 | What is a "sale" in the reports? | Online or counter orders not cancelled / returned-to-us / payment-failed, by order date (Karachi day). Sales = goods after discounts; delivery and COD fees shown separately. Unpaid prepaid orders still waiting are counted. |
+| Q90 | Screens sold for velocity | Net: sales minus `REPAIR_RETURN` and `ORDER_CANCEL_RESTOCK` (spec §6.6 names returns; cancelled orders were not demand). 7 / 30 / 90 whole days ending today. |
+| Q91 | Reorder rule and quantity | Reorder when days of cover < supplier lead time + 7 (§6.6). Lead time from the newest PO's supplier, else a supplier listing the brand, else 7 days. Suggested = enough for lead + 7 + 30 days, less stock and open orders. |
+| Q92 | Dead stock | Stock on hand and no net sales in 90 days (choose 30 / 60 / 180). Colours first stocked inside the period are flagged "new stock", not hidden. |
+| Q93 | Returns in margin | Margin report stays gross. The Returns report: goods value given back, cost back on shelf and replacement cost give the effect on margin; supplier credit added when settled; written-off / faulty cost stays in cost of goods. |
+| Q94 | COD report scope | Parcels booked in the period, or "everything still unsettled". |
+| Q95 | Chart library | None — charts are SVG drawn on the server (keeps the page JavaScript budget, §12). Recharts can be added later if you want hover crosshairs. |
+

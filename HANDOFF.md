@@ -1,11 +1,11 @@
-# Caidea — handoff notes (as of v1.16, 2026-10-22)
+# Caidea — handoff notes (as of v1.17, 2026-10-24)
 
-Read this first in a new chat, then SPECIFICATION.md (v1.16), BUILD_GUIDE.md and CLARIFICATIONS.md.
+Read this first in a new chat, then SPECIFICATION.md (v1.17), BUILD_GUIDE.md and CLARIFICATIONS.md.
 
 ## Where the build stands
-- Done: Milestones 1–11 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 complete** (Phase A Online orders v1.11; Phase B v1.15: pack, courier booking, tracking, delivered, returned parcels, labels, load sheets, COD remittance), **Milestone 11 complete (v1.16: returns & warranty)**.
-- Next: **M12 Dashboard & reports** (BUILD_GUIDE; see its "For M12" notes under M9, M10 and M11).
-- Last delivered: `caidea-v1.16.zip` (§28: M11 Returns & warranty). The zip has no `.git` folder; commit it in your own copy as `v1.16: M11 — returns, warranty check, refunds, supplier claims`. (v1.15 = M10 Phase B; v1.14 = hero animations; v1.13 = M9 counter sale.)
+- Done: Milestones 1–11 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 complete** (Phase A Online orders v1.11; Phase B v1.15: pack, courier booking, tracking, delivered, returned parcels, labels, load sheets, COD remittance), **Milestone 11 complete (v1.16: returns & warranty)**, **Milestone 12 complete (v1.17: dashboard & reports)**.
+- Next: **M13 Content pages** (/about, /services, /contact, blog, testimonials, sitemap, JSON-LD; the storefront header already links /about /contact /terms /faqs).
+- Last delivered: `caidea-v1.17.zip` (§29: M12 Dashboard & reports). The zip has no `.git` folder; commit it in your own copy as `v1.17: M12 — dashboard and reports`. (v1.16 = M11 returns; v1.15 = M10 Phase B; v1.14 = hero animations; v1.13 = M9 counter sale.)
 - Go-live checklist (shared doc, tick as you go): https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e
 
 ## Stack
@@ -41,12 +41,16 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 
 - v1.16 (M11, §28; ★ defaults Q75–Q88): **Returns** (OWNER/MANAGER, module `returns`) from a delivered online order or any paid counter sale: open → received → inspected → approved (refund / replacement / store credit) or rejected → refund paid → closed. Warranty: faults need an active `warranty_until` on every returned item; "changed my mind" 7 days. Stock only at approval via the engine: good → `REPAIR_RETURN`; faulty → NO stock, an open **supplier claim** (Admin → Stock → Supplier claims: sent → credited / rejected); damaged → write-off; replacement → `MANUAL_ADJUST` out linked to the return. Over-return blocked in code + trigger. Refund payout is recorded by staff (cash, or wallet/bank with a unique reference); order payment → `PARTIALLY_REFUNDED`/`REFUNDED` (COD still with the courier keeps its status). Cash refunds show on End of day; dashboard banner; order page lists returns. Logic `src/server/returns/{returns,vendor-claims}.ts`; migration 0010 (rebuilds the three returns tables — they were empty).
 
+- v1.17 (M12, §29; ★ defaults Q89–Q95): **Admin → Reports** (OWNER/MANAGER, module `reports`): Sales by day, Margin by brand and grade, Brand velocity, Days of cover and reorder, Inventory turnover, Dead stock, COD reconciliation, Cashier totals, Returns / refunds / claims, Purchase cost analysis — each with Download CSV. Dashboard (owner/manager) gains today / 7 / 30-day sales (online vs counter, margin), a 30-day chart, reorder alert and recent stock activity. One definition of a sale (`src/server/reports/sales.ts`): not cancelled / returned-to-us / failed; sales = subtotal − discount, fees apart; cost from `order_items.unit_cost_paisa`. Velocity is net of `REPAIR_RETURN` and `ORDER_CANCEL_RESTOCK`. New reports are one entry in `registry.ts` (`REPORTS`) returning cards + table (+ chart); the page and CSV share it. Charts are server-drawn SVG (`components/admin/charts.tsx`), no library. No schema change, no new dependency.
+
 ## Working rules from the owner
 - Before any change, check it against the specification; if it conflicts, offer options and apply the owner's choice.
 - After changes, confirm nothing that worked before is broken (unit tests, `npm run db:verify`, lint, typecheck, build, browser tests).
 - Ask about major decisions with options; otherwise keep going.
 
 ## Open items for the owner
+- (v1.17) Confirm or change the M12 defaults Q89–Q95 (CLARIFICATIONS §R) — especially: unpaid prepaid orders count as sales until cancelled, reorder suggestion = lead time + 7 + 30 days of sales, dead stock = 90 days with no net sales, no chart library (server-drawn SVG).
+- (v1.17) The home page "screens sold" figure is still typed by hand (Admin → Home page); tell me if you want it to count automatically from sales.
 - (v1.16) Confirm or change the M11 defaults Q75–Q88 (CLARIFICATIONS §Q) — especially: 7-day change-of-mind window, delivery charges refunded only for our faults, faulty units go to supplier claims (never back on sale), store credit is only a noted voucher, no customer emails for returns, cashiers can't take returns.
 - (v1.16) Write your return policy page (M13) to match these rules; the go-live checklist already lists it.
 - Replace sample figures "48,000+ screens sold" and "1,200+ repair shops" in Admin → Home page.
@@ -65,6 +69,9 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Schedule `/api/cron/expire-unpaid` (every 15 min) and `/api/cron/sync-tracking` (every 2 hours, v1.15) when the shop server is set up (M18).
 - (v1.13) Counter: decide whether managers should also take wallet/card payments (currently owner only, per your answer), set up the receipt printer on the till PC (80 mm roll; `--kiosk-printing` for no dialog), create a CASHIER login for each person at the till, register your regular technicians. A counter sale is undone through Returns (v1.16): reason "changed mind", cash refund (Q87).
 - Before go-live: enter real opening stock by counting each colour (product page → Count or correct stock) or with the CSV `opening_stock` column.
+
+## Upgrading an existing copy to v1.17
+From v1.16: replace the files → `npm install` (nothing new) → `npm test` → `npm run build` → restart. No database or environment change. Then sign in as owner/manager → Dashboard (new sales cards) and Reports. From v1.15 or older, do the v1.16 steps below first.
 
 ## Upgrading an existing copy to v1.16
 From v1.15: replace the files → `npm install` → `npm run db:migrate` (migration 0010 adds the returns columns, a supplier-claim unique index and the over-return trigger; backs up first) → `npm test` → `npm run db:verify` → `npm run build` → restart. No environment change. Then Admin → Returns (owner/manager): try a return on a test counter sale, and look at Supplier claims. From v1.14 or older, do the v1.15 steps below first.

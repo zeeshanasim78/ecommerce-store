@@ -396,6 +396,10 @@ SQL aggregations (in `src/server/reports/`) for: sales by day/channel, margin by
 
 **Done when:** numbers on the dashboard match a hand calculation on seeded data.
 
+> ✅ **Built (2026-10-24, v1.17).** SPECIFICATION §29, defaults Q89–Q95. Admin → Overview: **Reports** (ten reports, each with Download CSV) and a richer **Dashboard** (today / 7 / 30-day sales, margin, chart, reorder alert, recent stock activity). Logic in `src/server/reports/` (25 unit tests with hand-worked figures). Charts are server-drawn SVG instead of Recharts (Q95). Checked in a production build with a 2FA owner and cashier: all reports open and export, cashier kept out, 375 px clean.
+>
+> **For M13:** the storefront header still links `/about`, `/contact`, `/terms`, `/faqs` (404 until built). **For M18:** nothing new to schedule. The home page's "screens sold" figure could now read the sales report instead of being typed.
+
 ---
 
 ## Milestone 13 — Content pages *(2–3 days)*
