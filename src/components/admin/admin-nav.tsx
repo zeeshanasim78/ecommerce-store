@@ -30,6 +30,10 @@ const GROUPS: { heading: string; items: Item[] }[] = [
     items: [
       { href: "/admin/hero", label: "Hero carousel", module: "hero" },
       { href: "/admin/home", label: "Home page", module: "hero" },
+      { href: "/admin/blog", label: "Blog", module: "content" },
+      { href: "/admin/testimonials", label: "Testimonials", module: "content" },
+      { href: "/admin/services", label: "Services page", module: "content" },
+      { href: "/admin/messages", label: "Messages", module: "messages" },
       { href: "/admin/promotions", label: "Promotions", module: "discounts" },
       { href: "/admin/coupons", label: "Coupons", module: "discounts" },
     ],
@@ -52,12 +56,6 @@ const GROUPS: { heading: string; items: Item[] }[] = [
     ],
   },
   { heading: "Shop", items: [{ href: "/admin/settings", label: "Shop settings", module: "settings" }] },
-  {
-    heading: "Coming next",
-    items: [
-      { href: "#", label: "Blog & testimonials", milestone: "M13" },
-    ],
-  },
 ];
 
 const ALL_HREFS = GROUPS.flatMap((g) => g.items.map((i) => i.href)).filter((h) => h !== "#");

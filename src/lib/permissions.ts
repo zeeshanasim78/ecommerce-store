@@ -24,6 +24,10 @@ export const MODULE_ROLES = {
   technicians: ["OWNER", "MANAGER"],
   /** v1.17 (M12): sales, margin, stock-position, COD, cashier and purchasing reports + dashboard figures — spec §7 Reports (managers read) */
   reports: ["OWNER", "MANAGER"],
+  /** v1.18 (M13): blog, testimonials and services pages — spec §7 "Blog / Testimonials: OWNER, CONTENT_EDITOR" */
+  content: ["OWNER", "CONTENT_EDITOR"],
+  /** v1.18 (M13): messages from the Contact page (customer names and phone numbers, so no content editors) */
+  messages: ["OWNER", "MANAGER"],
   /** Shop settings: payment accounts, COD limit, contact numbers (spec §7 Settings — OWNER) */
   settings: ["OWNER"],
 } as const satisfies Record<string, readonly StaffRole[]>;

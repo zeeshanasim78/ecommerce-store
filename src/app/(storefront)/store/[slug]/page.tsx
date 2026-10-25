@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { JsonLd } from "@/components/store/json-ld";
 import { DiscountBadge, PriceTag } from "@/components/store/price-tag";
 import { AddToCart } from "@/components/store/add-to-cart";
 import { ProductGallery } from "@/components/store/product-gallery";
@@ -11,6 +12,8 @@ import { formatMoney, paisa } from "@/lib/money";
 import { readPaymentEnv } from "@/server/settings/payment-env";
 import { getCheckoutSettings } from "@/server/settings/store-settings";
 import { db } from "@/db/client";
+import { productLd } from "@/server/content/seo";
+import { siteUrl } from "@/server/site-url";
 import { getProductBySlug } from "@/server/storefront/catalog";
 
 export const revalidate = 300;
@@ -21,6 +24,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${product.brand} ${product.model} ${product.qualityGrade} screen`,
     description: `${product.displayType} display assembly for the ${product.brand} ${product.model}. ${product.warrantyDays}-day warranty, delivered across Pakistan.`,
+    alternates: { canonical: `/store/${product.slug}` },
+    openGraph: {
+      type: "website",
+      title: `${product.brand} ${product.model} ${product.qualityGrade} screen`,
+      url: `/store/${product.slug}`,
+      ...(product.images[0] ? { images: [product.images[0].url] } : {}),
+    },
   };
 }
 
@@ -41,6 +51,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (product.categoryName) specs.push(["Category", product.categoryName]);
 
   return (
+    <>
+    <JsonLd data={productLd(siteUrl(), product)} />
     <Container className="py-12">
       <nav aria-label="Breadcrumb" className="mb-8 text-sm text-midnight/65">
         <Link href="/store" className="hover:underline">
@@ -98,5 +110,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
     </Container>
+    </>
   );
 }

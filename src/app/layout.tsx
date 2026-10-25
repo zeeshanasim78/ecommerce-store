@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Epilogue, Plus_Jakarta_Sans } from "next/font/google";
+import { siteUrl } from "@/server/site-url";
 import "./globals.css";
 
 // Self-hosted at build time by next/font — no request to Google from the shopper's phone.
@@ -18,6 +19,11 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  // Absolute address for canonical links, Open Graph and the sitemap: from BETTER_AUTH_URL, never the request (v1.18, M13).
+  metadataBase: new URL(siteUrl()),
+  applicationName: "Caidea",
+  openGraph: { type: "website", siteName: "Caidea", locale: "en_PK" },
+  twitter: { card: "summary" },
   title: {
     default: "Caidea — Original and compatible phone screens in Pakistan",
     template: "%s | Caidea",

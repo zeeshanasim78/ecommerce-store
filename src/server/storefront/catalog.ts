@@ -2,37 +2,17 @@ import "server-only";
 import { and, asc, eq, gt, inArray, isNull, like, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client";
 import { brands, categories, heroSlides, productImages, productVariants, products, promotions } from "@/db/schema";
-import { MAX_HERO_SLIDES, type HeroTheme, type ImageAngle, type PhoneLayout } from "@/db/schema/catalog";
+import { MAX_HERO_SLIDES, type HeroTheme, type PhoneLayout } from "@/db/schema/catalog";
 import { toPaisa } from "@/lib/money";
-import { effectivePrice, type PriceResult, type PromotionRule } from "@/server/pricing/price";
+import { effectivePrice, type PromotionRule } from "@/server/pricing/price";
 
 /**
  * Storefront catalogue reads (v1.2). Every price shown to shoppers goes through
  * effectivePrice(), so sale prices and promotions are applied the same way everywhere.
  */
 
-export type CardImage = { url: string; alt: string; angle: ImageAngle; variantId: string | null };
-export type CardVariant = { id: string; color: string; label: string | null; stock: number };
-export type CatalogCard = {
-  id: string;
-  slug: string;
-  brand: string;
-  brandSlug: string;
-  model: string;
-  displayType: string;
-  qualityGrade: string;
-  description: string | null;
-  categoryName: string | null;
-  categorySlug: string | null;
-  compatibility: string[];
-  featureTags: string[];
-  warrantyDays: number;
-  lowStockThreshold: number;
-  totalStock: number;
-  images: CardImage[];
-  variants: CardVariant[];
-  price: PriceResult;
-};
+export type { CardImage, CardVariant, CatalogCard } from "./catalog-types";
+import type { CatalogCard } from "./catalog-types";
 
 export function getActivePromotions(now = new Date()): (PromotionRule & typeof promotions.$inferSelect)[] {
   const iso = now.toISOString();

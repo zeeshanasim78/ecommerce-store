@@ -6,8 +6,11 @@ import { SafeMarkdown } from "@/components/store/markdown";
 import { Phone3D } from "@/components/store/phone-3d";
 import { assignMotions, deviceProfileForSlide } from "@/components/store/device-profiles";
 import { ExplodedPhone, GradeRing, ValueCards } from "@/components/store/scenes-3d";
+import { Testimonials } from "@/components/store/content-ui";
 import { GradeBadge } from "@/components/ui/badge";
 import { Container, SectionDark } from "@/components/ui/card";
+import { db } from "@/db/client";
+import { listPublishedTestimonials } from "@/server/content/testimonials";
 import { getBrandSummaries, getCategorySummaries, getHeroSlides, listCatalog } from "@/server/storefront/catalog";
 import { getHomeStats, getHomeVideo } from "@/server/storefront/home-content";
 
@@ -80,6 +83,7 @@ const VALUES = [
 
 export default function HomePage() {
   const stats = getHomeStats();
+  const testimonials = listPublishedTestimonials(db, 3); // v1.18: shown only when the owner has published some
   const video = getHomeVideo();
   const dbSlides = getHeroSlides();
   // v1.14: each slide draws the phone it talks about, and each phone moves differently (Q64)
@@ -257,6 +261,10 @@ export default function HomePage() {
           <ValueCards values={VALUES} />
         </Container>
       </section>
+
+      <div className="border-t border-midnight/8 bg-surface">
+        <Testimonials items={testimonials} />
+      </div>
     </>
   );
 }

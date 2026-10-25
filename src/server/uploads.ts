@@ -15,7 +15,7 @@ const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"])
 
 export class UploadError extends Error {}
 
-export async function saveImage(file: File, folder: "products" | "hero" | "brands" | "home"): Promise<string> {
+export async function saveImage(file: File, folder: "products" | "hero" | "brands" | "home" | "blog"): Promise<string> {
   if (!ALLOWED.has(file.type)) throw new UploadError("Upload a JPG, PNG, WebP or AVIF image.");
   if (file.size > MAX_BYTES) throw new UploadError("Images must be 5 MB or smaller.");
 

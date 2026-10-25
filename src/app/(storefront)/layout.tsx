@@ -1,9 +1,13 @@
 import { eq } from "drizzle-orm";
+import { JsonLd } from "@/components/store/json-ld";
 import { SiteFooter } from "@/components/store/site-footer";
 import { SiteHeader } from "@/components/store/site-header";
 import { db } from "@/db/client";
 import { settings } from "@/db/schema";
+import { organizationLd } from "@/server/content/seo";
+import { siteUrl } from "@/server/site-url";
 import { getBannerPromotion } from "@/server/storefront/catalog";
+import { getShopFacts } from "@/server/storefront/shop-facts";
 
 /** Shop phone from settings; the seed's placeholder number is never shown. */
 function storePhone(): string | null {
@@ -13,6 +17,7 @@ function storePhone(): string | null {
 
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const banner = getBannerPromotion();
+  const facts = getShopFacts();
   return (
     <div className="flex min-h-dvh flex-col">
       <a
@@ -21,6 +26,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
       >
         Skip to content
       </a>
+      <JsonLd data={organizationLd(siteUrl(), { name: facts.name, phone: facts.phone, whatsapp: facts.whatsapp, salesEmail: facts.salesEmail })} />
       <SiteHeader bannerText={banner?.bannerText} phone={storePhone()} />
       <main id="main" className="flex-1">
         {children}

@@ -193,3 +193,42 @@ describe("§5 migrations", () => {
     expect(out).toEqual([]);
   });
 });
+
+describe("v1.18 — content pages (M13)", () => {
+  it("structured data is written only by the JsonLd component, through jsonLdString", () => {
+    const writers = files("src").filter((f) => /application\/ld\+json/.test(read(f)));
+    expect(writers).toEqual(["src/components/store/json-ld.tsx"]);
+    expect(read("src/components/store/json-ld.tsx")).toMatch(/jsonLdString\(data\)/);
+  });
+
+  it("Markdown is rendered only by the two sanitising components", () => {
+    const users = files("src").filter((f) => /from ["']react-markdown["']/.test(read(f)));
+    expect(users.sort()).toEqual(["src/components/store/article-markdown.tsx", "src/components/store/markdown.tsx"]);
+    expect(read("src/components/store/article-markdown.tsx")).toMatch(/rehype-sanitize/);
+    expect(read("src/components/store/article-markdown.tsx")).toMatch(/skipHtml/);
+  });
+
+  it("the contact form is rate-limited, has a honeypot and a daily cap", () => {
+    const action = read("src/app/(storefront)/contact/actions.ts");
+    expect(action).toMatch(/rateLimit\(/);
+    expect(action).toMatch(/website/);
+    expect(read("src/app/(storefront)/contact/contact-form.tsx")).toMatch(/name="website"/);
+    expect(read("src/server/content/contact.ts")).toMatch(/CONTACT_DAILY_CAP/);
+  });
+
+  it("the sitemap and robots file never mention private areas as pages, and use the configured address", () => {
+    const sitemap = read("src/app/sitemap.ts");
+    for (const p of ["/admin", "/cart", "/checkout", "/order", "/login", "/api"]) expect(sitemap).not.toContain(`path: "${p}`);
+    expect(sitemap).toMatch(/siteUrl\(\)/);
+    expect(sitemap).toMatch(/force-dynamic/);
+    const robots = read("src/app/robots.ts");
+    for (const p of ["/admin", "/api", "/cart", "/checkout", "/order"]) expect(robots).toContain(`"${p}"`);
+  });
+
+  it("content admin pages are limited to the content / messages modules", () => {
+    for (const dir of ["blog", "testimonials", "services"]) {
+      for (const f of files(`src/app/admin/(gated)/${dir}`).filter((f) => /page\.tsx$|actions\.ts$/.test(f))) expect(read(f)).toMatch(/requireStaff\("content"\)/);
+    }
+    for (const f of files("src/app/admin/(gated)/messages")) expect(read(f)).toMatch(/requireStaff\("messages"\)/);
+  });
+});

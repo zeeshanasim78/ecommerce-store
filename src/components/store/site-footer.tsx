@@ -16,7 +16,7 @@ const COLUMNS = [
     heading: "For repair shops",
     links: [
       { href: "/services", label: "Wholesale pricing" },
-      { href: "/services#warranty", label: "Warranty and returns" },
+      { href: "/return-policy", label: "Warranty and returns" },
       { href: "/order", label: "Track an order" },
     ],
   },
@@ -26,8 +26,16 @@ const COLUMNS = [
       { href: "/about", label: "About" },
       { href: "/blog", label: "Repair notes" },
       { href: "/contact", label: "Contact" },
+      { href: "/faqs", label: "FAQs" },
     ],
   },
+];
+
+/** Legal pages (v1.18, M13). */
+const POLICIES = [
+  { href: "/terms", label: "Terms of sale" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/return-policy", label: "Returns and warranty" },
 ];
 
 export function SiteFooter() {
@@ -58,7 +66,17 @@ export function SiteFooter() {
       <div className="border-t border-canvas/10">
         <Container className="flex flex-col gap-2 py-6 text-sm text-canvas/55 sm:flex-row sm:justify-between">
           <p>© {new Date().getFullYear()} Caidea. All prices in Pakistani rupees (PKR).</p>
-          <p>Cash on delivery, JazzCash, Easypaisa, NayaPay and bank transfer.</p>
+          <nav aria-label="Policies">
+            <ul className="flex flex-wrap gap-x-5 gap-y-1">
+              {POLICIES.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="hover:text-canvas">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </Container>
       </div>
     </footer>

@@ -23,6 +23,8 @@ export const blogPosts = sqliteTable(
     authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
+    /** v1.18: soft delete (spec §4.0) — archived posts are hidden everywhere but can be restored. */
+    archivedAt: text("archived_at"),
     createdAt: timestamp("created_at"),
     updatedAt: timestamp("updated_at"),
   },
@@ -40,6 +42,8 @@ export const testimonials = sqliteTable(
     quote: text("quote").notNull(),
     isPublished: integer("is_published", { mode: "boolean" }).default(false).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
+    /** v1.18: soft delete. */
+    archivedAt: text("archived_at"),
     createdAt: timestamp("created_at"),
   },
   (t) => [check("testimonials_rating", sql`${t.rating} IS NULL OR ${t.rating} BETWEEN 1 AND 5`)],
@@ -53,6 +57,8 @@ export const services = sqliteTable("services", {
   bodyMd: text("body_md"),
   icon: text("icon"),
   sortOrder: integer("sort_order").default(0).notNull(),
+  /** v1.18: hide a service from /services without deleting it. */
+  isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
 });
 
 export const contactMessages = sqliteTable(
@@ -65,7 +71,10 @@ export const contactMessages = sqliteTable(
     subject: text("subject"),
     message: text("message").notNull(),
     status: text("status", { enum: MESSAGE_STATUSES }).default("NEW").notNull(),
+    /** v1.18: who last changed the status, and when. */
+    handledBy: text("handled_by").references(() => user.id, { onDelete: "set null" }),
+    handledAt: text("handled_at"),
     createdAt: timestamp("created_at"),
   },
-  () => [check("contact_messages_status", inList("status", MESSAGE_STATUSES))],
+  (t) => [check("contact_messages_status", inList("status", MESSAGE_STATUSES)), index("contact_messages_status_idx").on(t.status, t.createdAt)],
 );

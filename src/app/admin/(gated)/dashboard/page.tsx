@@ -1,5 +1,6 @@
 import { orderCounts } from "@/server/orders/admin-orders";
 import { codOutstanding } from "@/server/orders/cod-remittance";
+import { newMessageCount } from "@/server/content/contact";
 import { returnCounts } from "@/server/returns/returns";
 import { claimTotals } from "@/server/returns/vendor-claims";
 import Link from "next/link";
@@ -33,6 +34,8 @@ const DENIED: Record<string, string> = {
   technicians: "Only a manager or the owner can approve technicians.",
   returns: "Only a manager or the owner can handle returns.",
   reports: "Only a manager or the owner can open reports.",
+  content: "Only the owner or a content editor can edit the blog, testimonials and services pages.",
+  messages: "Only a manager or the owner can read contact messages.",
   settings: "Only the owner can change shop settings.",
 };
 
@@ -52,6 +55,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const counterToday = canAccess(staff.role, "counter") ? counterDaySummary(db, { date: karachiDate(new Date()), cashierId: canAccess(staff.role, "technicians") ? undefined : staff.id }).all : null;
   // v1.16 (M11): returns waiting for a step, refunds not yet paid, supplier claims not yet credited
   const returnsToDo = canAccess(staff.role, "returns") ? { ...returnCounts(db), ...claimTotals(db) } : null;
+  // v1.18 (M13): messages from the Contact page nobody has answered yet
+  const newMessages = canAccess(staff.role, "messages") ? newMessageCount(db) : 0;
   const techniciansWaiting = canAccess(staff.role, "technicians") ? listTechnicians(db, { status: "PENDING" }).length : 0;
   // v1.17 (M12): sales, margin and recent stock activity — owners and managers only (cashiers see their own shift above)
   const figures = canAccess(staff.role, "reports") ? dashboardFigures(db) : null;
@@ -108,6 +113,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <span className="tabular">{returnsToDo.REFUND_DUE} refund{returnsToDo.REFUND_DUE === 1 ? "" : "s"} to pay</span>
           <span className="tabular">{returnsToDo.open + returnsToDo.sent} supplier claim{returnsToDo.open + returnsToDo.sent === 1 ? "" : "s"} open ({formatMoney(paisa(returnsToDo.owedPaisa))})</span>
           <span className="ml-auto underline underline-offset-4">Open returns</span>
+        </Link>
+      ) : null}
+      {newMessages > 0 ? (
+        <Link href="/admin/messages" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-bezel bg-white px-6 py-4 font-medium ring-1 ring-midnight/8">
+          <span className="font-semibold">Contact messages</span>
+          <span className="tabular">{newMessages} new</span>
+          <span className="ml-auto underline underline-offset-4">Read messages</span>
         </Link>
       ) : null}
       {codOwed > 0 ? (

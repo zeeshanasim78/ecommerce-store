@@ -154,6 +154,12 @@ try {
   sqlite.exec("ROLLBACK TO verify; RELEASE verify");
 }
 
+console.log("\nContent pages (v1.18, M13)");
+mustFail("Blog post with an unknown status", "INSERT INTO blog_posts (id, slug, title, body_md, status) VALUES ('b1', 'verify', 'Verify', 'text', 'LIVE')");
+mustFail("Blog post with the same web address twice", "INSERT INTO blog_posts (id, slug, title, body_md) VALUES ('b1', 'verify', 'A', 'x'), ('b2', 'verify', 'B', 'y')");
+mustFail("Testimonial with a rating of 6", "INSERT INTO testimonials (id, author_name, quote, rating) VALUES ('t1', 'Verify', 'A quote', 6)");
+mustFail("Contact message with an unknown status", "INSERT INTO contact_messages (id, name, message, status) VALUES ('m1', 'Verify', 'A message', 'DONE')");
+
 console.log("\nLedger invariant (spec §6.5): SUM(quantity_changed) = current_stock for every variant");
 const drift = findLedgerDrift(db);
 if (drift.length === 0) pass("All variants reconcile with their ledger");

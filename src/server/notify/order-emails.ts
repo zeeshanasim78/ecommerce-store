@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { siteUrl } from "@/server/site-url";
 import type { DB } from "@/db/connection";
 import { emailLog } from "@/db/schema";
 import type { EMAIL_KINDS } from "@/db/schema/orders";
@@ -29,11 +30,8 @@ export type EmailKind = (typeof EMAIL_KINDS)[number];
 export const CUSTOMER_DAILY_LIMIT = 3;
 type Env = Record<string, string | undefined>;
 
-/** Public address of the shop for links in emails. From the environment file, never from the request. */
-export function siteUrl(env: Env = process.env): string {
-  const raw = (env.BETTER_AUTH_URL ?? "").trim().replace(/\/+$/, "");
-  return /^https?:\/\/[^\s/?#]+(:\d+)?$/i.test(raw) ? raw : "http://localhost:3000";
-}
+/** Public address of the shop for links in emails (v1.18: lives in src/server/site-url.ts, re-exported here). */
+export { siteUrl };
 
 const rs = (n: number) => formatMoney(paisa(n));
 /** One line of customer-typed text: no control characters or line breaks, limited length. */

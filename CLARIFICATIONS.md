@@ -233,3 +233,16 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q94 | COD report scope | Parcels booked in the period, or "everything still unsettled". |
 | Q95 | Chart library | None — charts are SVG drawn on the server (keeps the page JavaScript budget, §12). Recharts can be added later if you want hover crosshairs. |
 
+
+## S. Milestone 13 — content pages (2026-10-25) — ★ defaults used until you say otherwise
+
+| Q | Question | ★ Default used |
+|---|---|---|
+| Q96 | Legal pages | Built as pages in code: Terms of sale, Privacy, Return policy (`/return-policy`), FAQs. Text is a draft matching the M11 rules; have it reviewed before go-live. |
+| Q97 | Who edits content? | Blog, Testimonials, Services page: OWNER + CONTENT_EDITOR (spec §7). Contact messages: OWNER + MANAGER. |
+| Q98 | Deleting posts / testimonials | Archive (hidden, restorable), never hard delete. Services have a hide switch. |
+| Q99 | Contact form abuse | Honeypot, 5 per IP per hour, 50 per day for the shop, repeats stored once. Shop emailed; nothing blocks if email fails. |
+| Q100 | Testimonials | Shown on Home, About and Services. No star-rating markup sent to Google. |
+| Q101 | Sitemap / robots | Dynamic; lists pages, products and published posts. Everything blocked while the address is localhost. |
+| Q102 | About / FAQ wording | No invented facts (no founding year, address or numbers). Please supply your real story and shop address. |
+| Q103 | Default share image | Not built yet; posts use their cover picture, other pages share without an image. Say if you want a branded one. |

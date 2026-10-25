@@ -408,6 +408,8 @@ SQL aggregations (in `src/server/reports/`) for: sales by day/channel, margin by
 
 **Done when:** a post published in admin appears on `/blog` and in `/sitemap.xml`.
 
+> ✅ **Built (2026-10-25, v1.18).** SPECIFICATION §30, defaults Q96–Q103. Public: About, Services, Contact, Blog, FAQs, Terms, Privacy, Return policy, sitemap, robots, Open Graph, JSON-LD. Admin → Storefront: Blog (Markdown editor with preview), Testimonials, Services page, Messages. 301 unit tests; checked in a production build: publishing a post shows it on `/blog` and in `/sitemap.xml`, hostile Markdown (script, onerror, javascript: link) is stripped, the content editor cannot open Messages, honeypot posts are dropped, no sideways scroll at 375 px. **For M18:** run `npm run build` with `BETTER_AUTH_URL` set to the real https address (static pages bake it in; `/etc/caidea/caidea.env` is runtime only). **For M14:** nothing new.
+
 ---
 
 ## Milestone 14 — Payment automation *(depends on Clarify Q1/Q2 and approvals)* — Spec §8
@@ -447,7 +449,7 @@ Playwright: browse → add to cart → COD checkout; manual TID checkout + admin
 **Hardware:** a dedicated mini-PC (e.g. 8 GB RAM, SSD) — not the cashier's computer — on a **UPS**, with a backup internet line (second ISP or 4G router).
 
 1. Install **Ubuntu Server 24.04 LTS** (easiest for Node/SQLite), enable full-disk encryption, auto security updates.
-2. Install Node 22, clone the repo, `npm ci && npm run build`, create `.env.production`, run `npm run db:migrate`.
+2. Install Node 22, clone the repo, `npm ci`, create `.env.production`, then `BETTER_AUTH_URL=https://your-domain npm run build` (the address is baked into canonical links and JSON-LD at build time), run `npm run db:migrate`.
 3. Run the app with **systemd** as a single process (`next start -p 3000`; no cluster mode).
 4. **Cloudflare Tunnel** (`cloudflared`): connects the shop server to Cloudflare *outbound*, so your domain works over HTTPS without a static IP or opening router ports. Point `caidea.pk` (or your domain) at the tunnel.
 5. **Backups:** Litestream → Cloudflare R2 or Backblaze B2 (continuous), plus a nightly snapshot. Test a restore on another computer.
