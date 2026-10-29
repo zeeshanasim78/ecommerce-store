@@ -2,6 +2,7 @@ import { inArray } from "drizzle-orm";
 import type { DB, Tx } from "@/db/connection";
 import { settings } from "@/db/schema";
 import type { SettingKey } from "@/db/schema/system";
+import { readGatewayConfig } from "@/server/payments/config";
 import { readPaymentEnv, type EnvBank, type EnvWallet } from "./payment-env";
 
 /**
@@ -12,11 +13,15 @@ import { readPaymentEnv, type EnvBank, type EnvWallet } from "./payment-env";
  * that payment method off.
  */
 
-export const CHECKOUT_METHODS = ["COD", "JAZZCASH", "EASYPAISA", "NAYAPAY", "BANK_TRANSFER"] as const;
+export const CHECKOUT_METHODS = ["COD", "JAZZCASH", "EASYPAISA", "NAYAPAY", "BANK_TRANSFER", "AGGREGATOR"] as const;
 export type CheckoutMethod = (typeof CHECKOUT_METHODS)[number];
 export const WALLET_METHODS = ["JAZZCASH", "EASYPAISA", "NAYAPAY"] as const;
 export type WalletMethod = (typeof WALLET_METHODS)[number];
+/** Pay into the shop's own account, then send the transaction ID (staff confirm by hand). */
 export const MANUAL_METHODS: readonly CheckoutMethod[] = ["JAZZCASH", "EASYPAISA", "NAYAPAY", "BANK_TRANSFER"];
+/** v1.19 (M14): pay on the payment gateway's page; the gateway tells the shop by a signed callback. */
+export const ONLINE_METHODS: readonly CheckoutMethod[] = ["AGGREGATOR"];
+export const isOnlineMethod = (m: string) => (ONLINE_METHODS as readonly string[]).includes(m);
 
 export const METHOD_LABEL: Record<CheckoutMethod, string> = {
   COD: "Cash on delivery",
@@ -24,6 +29,7 @@ export const METHOD_LABEL: Record<CheckoutMethod, string> = {
   EASYPAISA: "Easypaisa",
   NAYAPAY: "NayaPay",
   BANK_TRANSFER: "Bank transfer",
+  AGGREGATOR: "Card or wallet (pay online now)",
 };
 
 export type WalletAccount = EnvWallet;
@@ -47,6 +53,8 @@ export type CheckoutSettings = {
   codPauseMessage: string | null;
   /** v1.12: no delivery charge when the customer pays in advance (default on). */
   prepaidFreeDelivery: boolean;
+  /** v1.19 (M14): the payment gateway's keys are in the environment file and well-formed. */
+  gatewayReady: boolean;
 };
 
 export const DEFAULT_MANUAL_TTL_MINUTES = 24 * 60; // v1.12 owner: payment details within 24 hours (v1.11 had 48 h)
@@ -84,12 +92,13 @@ export function getCheckoutSettings(db: DB | Tx, env: Record<string, string | un
     codPaused: !enabled.includes("COD"),
     codPauseMessage: cleanLine(get("cod_pause_message"), 200) || null,
     prepaidFreeDelivery: get("prepaid_free_delivery") !== false,
+    gatewayReady: readGatewayConfig(env).configured,
   };
 }
 
 /** Methods a shopper can actually choose: switched on AND (for wallets/bank) with account details set. */
 export function availableMethods(s: CheckoutSettings): CheckoutMethod[] {
-  return s.enabledMethods.filter((m) => (m === "COD" ? true : m === "BANK_TRANSFER" ? s.bank !== null : s.wallets[m as WalletMethod] !== undefined));
+  return s.enabledMethods.filter((m) => (m === "COD" ? true : m === "AGGREGATOR" ? s.gatewayReady : m === "BANK_TRANSFER" ? s.bank !== null : s.wallets[m as WalletMethod] !== undefined));
 }
 
 export function writeSetting(db: DB | Tx, key: SettingKey, value: unknown, actorId: string) {
@@ -104,13 +113,15 @@ export function writeSetting(db: DB | Tx, key: SettingKey, value: unknown, actor
 }
 
 
-/** Prepaid methods a shopper can choose (bank / wallets with real details). v1.11: at least one must exist. */
+/** Every way to pay in advance a shopper can choose (online, bank, wallets). v1.11: at least one must exist. */
 export const prepaidMethods = (s: CheckoutSettings) => availableMethods(s).filter((m) => m !== "COD");
+/** Bank / wallet accounts the customer pays into by hand (the "Which account?" list, the PAY TO block). */
+export const manualPrepaidMethods = (s: CheckoutSettings) => prepaidMethods(s).filter((m) => !isOnlineMethod(m));
 
 /** "Pay to" lines for a prepaid method, as shown at checkout, on the order page, in emails and the PDF. */
 export function payToLines(s: CheckoutSettings, m: CheckoutMethod): string[] | null {
   if (m === "BANK_TRANSFER") return s.bank ? [`Bank: ${s.bank.bankName}`, `Account title: ${s.bank.accountTitle}`, `IBAN: ${s.bank.iban}`] : null;
-  if (m === "COD") return null;
+  if (m === "COD" || m === "AGGREGATOR") return null;
   const w = s.wallets[m as WalletMethod];
   return w ? [`Account title: ${w.accountTitle}`, `${METHOD_LABEL[m]} number: ${w.accountNumber}`] : null;
 }

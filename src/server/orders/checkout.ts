@@ -7,7 +7,7 @@ import { paisa, toPaisa, type Paisa } from "@/lib/money";
 import { formatPkMobile, normalisePkMobile } from "@/lib/phone";
 import { CouponRejectedError, checkCoupon, redeemCoupon } from "@/server/pricing/coupons";
 import { InsufficientStockError, applyStockMovement, withStockTransaction } from "@/server/inventory/stock";
-import { MANUAL_METHODS, CHECKOUT_METHODS, availableMethods, getCheckoutSettings, type CheckoutMethod } from "@/server/settings/store-settings";
+import { MANUAL_METHODS, CHECKOUT_METHODS, availableMethods, getCheckoutSettings, isOnlineMethod, type CheckoutMethod } from "@/server/settings/store-settings";
 import { CartInputSchema, quoteCart, type QuotedLine } from "@/server/storefront/cart";
 import { issueOrderToken } from "./access";
 
@@ -96,6 +96,8 @@ export function placeOrder(db: DB, raw: unknown, now: Date = new Date()): Checko
   if (!parsed.success) return { ok: false, kind: "INVALID", message: parsed.error.issues[0]?.message ?? "Check the form." };
   const input = parsed.data;
   const isManual = MANUAL_METHODS.includes(input.method);
+  // v1.19 (M14): pay now on the payment gateway's page; paid only when the gateway's signed callback arrives
+  const isOnline = isOnlineMethod(input.method);
   const payerPhone = input.payerPhone ? normalisePkMobile(input.payerPhone) : null;
   if (input.payerPhone && !payerPhone) return { ok: false, kind: "INVALID", message: "The number you paid from should be a mobile number, like 0300 1234567." };
   if (input.tid && !isManual) return { ok: false, kind: "INVALID", message: "A transaction ID is only needed for wallet or bank payments." };
@@ -134,8 +136,8 @@ export function placeOrder(db: DB, raw: unknown, now: Date = new Date()): Checko
         if (!c.ok) reject("COUPON", `Code ${input.coupon.toUpperCase()}: ${c.reason}`);
         else discount = c.discountPaisa;
       }
-      // v1.12 owner: delivery is free when the customer pays in advance (switch in Shop settings)
-      const shipping = isManual && settings.prepaidFreeDelivery ? 0 : zone!.shippingFeePaisa;
+      // v1.12 owner: delivery is free when the customer pays in advance (switch in Shop settings); v1.19: online counts too
+      const shipping = (isManual || isOnline) && settings.prepaidFreeDelivery ? 0 : zone!.shippingFeePaisa;
       const codFee = input.method === "COD" ? zone!.codFeePaisa : 0;
       const total = paisa(subtotal - discount + shipping + codFee);
       if (input.method === "COD" && total > settings.codMaxPaisa) {
@@ -220,7 +222,7 @@ export function placeOrder(db: DB, raw: unknown, now: Date = new Date()): Checko
       tx.insert(payments)
         .values({
           orderId,
-          provider: isManual ? "MANUAL" : "CASH",
+          provider: isOnline ? "AGGREGATOR" : isManual ? "MANUAL" : "CASH",
           manualReference: input.tid ? input.tid.toUpperCase() : null,
           payerMsisdn: payerPhone,
           amountPaisa: total,

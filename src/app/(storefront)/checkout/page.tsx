@@ -37,6 +37,7 @@ export default function CheckoutPage() {
         codPaused={s.codPaused}
         codPauseMessage={s.codPauseMessage}
         prepaidFreeDelivery={s.prepaidFreeDelivery}
+        onlineWaitMinutes={s.unpaidTtlMinutes}
       />
     </Container>
   );

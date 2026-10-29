@@ -156,7 +156,7 @@ const CATALOGUE: ProductSeed[] = [
 ];
 
 // COD limit and payment account numbers come from the environment file (v1.8), not the database
-const SETTINGS: Record<Exclude<SettingKey, "home_stats" | "home_video" | "cod_max_order_paisa" | "wallet_accounts" | "bank_account" | "payment_details_seen" | "payment_details_alert" | "email_daily_count" | "sales_email" | "cod_pause_message" | "prepaid_free_delivery" | "courier_cities_leopards" | "courier_cities_postex" | "tracking_sync_last">, unknown> = {
+const SETTINGS: Record<Exclude<SettingKey, "home_stats" | "home_video" | "cod_max_order_paisa" | "wallet_accounts" | "bank_account" | "payment_details_seen" | "payment_details_alert" | "email_daily_count" | "sales_email" | "cod_pause_message" | "prepaid_free_delivery" | "courier_cities_leopards" | "courier_cities_postex" | "tracking_sync_last" | "payment_reconcile_last">, unknown> = {
   store_name: "Caidea",
   store_phone: "+920000000000", // placeholder — set the real number in admin settings
   whatsapp: "+920000000000",

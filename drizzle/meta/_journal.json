@@ -85,6 +85,13 @@
       "when": 1792877337317,
       "tag": "0011_v1_18_content_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1793297437902,
+      "tag": "0012_v1_19_online_payments",
+      "breakpoints": true
     }
   ]
 }

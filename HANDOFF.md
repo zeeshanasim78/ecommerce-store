@@ -1,11 +1,11 @@
-# Caidea — handoff notes (as of v1.18, 2026-10-25)
+# Caidea — handoff notes (as of v1.19, 2026-10-29)
 
-Read this first in a new chat, then SPECIFICATION.md (v1.18), BUILD_GUIDE.md and CLARIFICATIONS.md.
+Read this first in a new chat, then SPECIFICATION.md (v1.19), BUILD_GUIDE.md and CLARIFICATIONS.md.
 
 ## Where the build stands
-- Done: Milestones 1–11 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 complete** (Phase A Online orders v1.11; Phase B v1.15: pack, courier booking, tracking, delivered, returned parcels, labels, load sheets, COD remittance), **Milestone 11 complete (v1.16: returns & warranty)**, **Milestone 12 complete (v1.17: dashboard & reports)**, **Milestone 13 complete (v1.18: content pages)**.
-- Next: **M14 Payment automation** (needs the aggregator choice, Clarify Q1/Q2).
-- Last delivered: `caidea-v1.18.zip` (§30: M13 Content pages). The zip has no `.git` folder; commit it in your own copy as `v1.18: M13 — content pages`. (v1.17 = M12 reports; v1.16 = M11 returns.)
+- Done: Milestones 1–14 (M14 = online payments, §31); earlier: Milestones 1–11 (scaffold, design system, database, login with mandatory 2FA, stock engine, vendors / purchase orders / stock ledger / stock counts / product CSV, cart + colour picker + catalogue filters, checkout + order tracking + expiry job + Shop settings, **counter sale / POS**), v1.2 enterprise design brief, v1.3 home-page refresh, **Milestone 10 complete** (Phase A Online orders v1.11; Phase B v1.15: pack, courier booking, tracking, delivered, returned parcels, labels, load sheets, COD remittance), **Milestone 11 complete (v1.16: returns & warranty)**, **Milestone 12 complete (v1.17: dashboard & reports)**, **Milestone 13 complete (v1.18: content pages)**.
+- Next: **M15 Security hardening** (nonce CSP, headers, allowedOrigins, rate limits, upload checks).
+- Last delivered: `caidea-v1.19.zip` (§31: M14 Online payments). The zip has no `.git` folder; commit it in your own copy as `v1.19: M14 — online payments`. (v1.18 = M13 content pages.) (v1.17 = M12 reports; v1.16 = M11 returns.)
 - Go-live checklist (shared doc, tick as you go): https://claude.ai/code/artifact/1640fa4e-990f-4aea-b1a2-4227bec4606e
 
 ## Stack
@@ -44,6 +44,7 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - v1.17 (M12, §29; ★ defaults Q89–Q95): **Admin → Reports** (OWNER/MANAGER, module `reports`): Sales by day, Margin by brand and grade, Brand velocity, Days of cover and reorder, Inventory turnover, Dead stock, COD reconciliation, Cashier totals, Returns / refunds / claims, Purchase cost analysis — each with Download CSV. Dashboard (owner/manager) gains today / 7 / 30-day sales (online vs counter, margin), a 30-day chart, reorder alert and recent stock activity. One definition of a sale (`src/server/reports/sales.ts`): not cancelled / returned-to-us / failed; sales = subtotal − discount, fees apart; cost from `order_items.unit_cost_paisa`. Velocity is net of `REPAIR_RETURN` and `ORDER_CANCEL_RESTOCK`. New reports are one entry in `registry.ts` (`REPORTS`) returning cards + table (+ chart); the page and CSV share it. Charts are server-drawn SVG (`components/admin/charts.tsx`), no library. No schema change, no new dependency.
 
 - v1.18 (M13, §30; ★ defaults Q96–Q103): pages `/about /services /contact /blog /blog/[slug] /faqs /terms /privacy /return-policy`, `sitemap.xml`, `robots.txt`, Open Graph + JSON-LD (Organization, Product, BlogPosting, Breadcrumb, FAQPage). Admin: Blog, Testimonials, Services page (OWNER + CONTENT_EDITOR), Messages inbox (OWNER + MANAGER). Logic in `src/server/content/` (no Next imports; `blog`, `testimonials`, `services`, `contact`, `seo`, `faq`). Markdown is rendered only by `ArticleMarkdown` (skipHtml + allow-list + rehype-sanitize + link filter); JSON-LD only via `JsonLd`; both enforced by `constitution.test.ts`. Contact form: honeypot `website`, 5/IP/hour, 50/day, emailed after the response. Site address = `BETTER_AUTH_URL` only; **static pages bake it in at build time, so build with it set** (M18). Migration 0011 (`when` 1792877337317 — 0012 must be larger). New dependency: `rehype-sanitize`.
+- v1.19 (M14, §31; ★ defaults Q104–Q116): third checkout choice **Card or wallet (pay online now)** through a vendor-neutral `PaymentGateway` adapter (`src/server/payments/`; "Caidea gateway protocol v1", HMAC-signed callbacks) and a local test gateway (`npm run gateway:test`, env `AGGREGATOR_VENDOR=test`). Order PAID only in `applyGatewayState()` from a verified callback or server-to-server status check; replays de-duplicated in `webhook_events`; wrong amount → 422 + "Payment problem"; job `/api/cron/reconcile-payments` (10 min) cancels unpaid online orders after 30 min; paid-after-cancel = "Refund due" with a gateway Refund button. Return page only shows results. No live vendor yet: when chosen, add one adapter + `KNOWN_VENDORS` entry.
 
 ## Working rules from the owner
 - Before any change, check it against the specification; if it conflicts, offer options and apply the owner's choice.
@@ -51,6 +52,8 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Ask about major decisions with options; otherwise keep going.
 
 ## Open items for the owner
+- (v1.19) Pick a payment company and open a merchant/sandbox account; send me its API document and sandbox keys so I add its adapter. Confirm or change Q104–Q116 (CLARIFICATIONS §T). Until then leave `AGGREGATOR_VENDOR` empty (the option stays hidden).
+- (v1.19) On the live server give the vendor `{BETTER_AUTH_URL}/api/webhooks/payments` and schedule `POST /api/cron/reconcile-payments` every 10 minutes with `CRON_SECRET` (M18).
 - (v1.18) Confirm or change Q96–Q103 (CLARIFICATIONS §S). Have a lawyer review Terms, Privacy and Return policy (drafts). Tell me your real story, address and opening hours for About/Contact; add real testimonials and blog posts; say if you want a branded default share image (not built).
 - (v1.18) On the live server build with `BETTER_AUTH_URL=https://your-domain npm run build`; robots.txt blocks everything while the address is localhost.
 - (v1.17) Confirm or change the M12 defaults Q89–Q95 (CLARIFICATIONS §R) — especially: unpaid prepaid orders count as sales until cancelled, reorder suggestion = lead time + 7 + 30 days of sales, dead stock = 90 days with no net sales, no chart library (server-drawn SVG).
@@ -73,6 +76,9 @@ Next.js 16 (App Router, `proxy.ts` instead of middleware), TypeScript, Tailwind 
 - Schedule `/api/cron/expire-unpaid` (every 15 min) and `/api/cron/sync-tracking` (every 2 hours, v1.15) when the shop server is set up (M18).
 - (v1.13) Counter: decide whether managers should also take wallet/card payments (currently owner only, per your answer), set up the receipt printer on the till PC (80 mm roll; `--kiosk-printing` for no dialog), create a CASHIER login for each person at the till, register your regular technicians. A counter sale is undone through Returns (v1.16): reason "changed mind", cash refund (Q87).
 - Before go-live: enter real opening stock by counting each colour (product page → Count or correct stock) or with the CSV `opening_stock` column.
+
+## Upgrading an existing copy to v1.19
+From v1.18: replace the files → `npm install` (nothing new) → `npm run db:migrate` (migration 0012 adds payment/webhook columns; backs up first) → `npm test` → `npm run db:verify` → `BETTER_AUTH_URL=<your address> npm run build` → restart. Environment: the five `AGGREGATOR_*` lines (see `.env.example`) are optional and can stay empty. To try it locally: `AGGREGATOR_VENDOR=test` plus the test values from `.env.example`, `npm run gateway:test`. Migration 0013's `when` must exceed 1793297437902.
 
 ## Upgrading an existing copy to v1.18
 From v1.17: replace the files → `npm install` (adds `rehype-sanitize`) → `npm run db:migrate` (migration 0011; backs up first) → `npm test` → `npm run db:verify` → `BETTER_AUTH_URL=<your address> npm run build` → restart. No environment change. Then: Admin → Blog (write and publish a post, check /blog and /sitemap.xml), Testimonials, Services page; send a test message from /contact and look in Admin → Messages. From v1.16 or older, do the v1.17 steps below first.

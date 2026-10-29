@@ -11,7 +11,11 @@ import { formatKarachi } from "@/lib/time";
 import { getPaymentAlert, getSeenPaymentDetails } from "@/server/settings/payment-integrity";
 import { alertRecipients, emailsSentToday, readGmailConfig } from "@/server/notify/email";
 import { siteUrl } from "@/server/notify/order-emails";
-import { acknowledgePaymentChange, saveShopSettings, sendTestEmail } from "./actions";
+import { readGatewayConfig } from "@/server/payments/config";
+import { onlineAttentionCounts, recentCallbacks } from "@/server/payments/online";
+import { settings as settingsTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { acknowledgePaymentChange, reconcilePaymentsNow, saveShopSettings, sendTestEmail, testGatewayConnection } from "./actions";
 
 export const metadata = { title: "Shop settings" };
 export const dynamic = "force-dynamic";
@@ -28,9 +32,13 @@ export default async function ShopSettingsPage({ searchParams }: { searchParams:
   const alertTo = alertRecipients();
   const sentToday = emailsSentToday(db);
   const site = siteUrl();
+  const gw = readGatewayConfig();
+  const callbacks = recentCallbacks(db);
+  const attention = onlineAttentionCounts(db);
+  const lastRec = db.select().from(settingsTable).where(eq(settingsTable.key, "payment_reconcile_last")).get()?.value as { at?: string; by?: string; checked?: number; paid?: string[]; cancelled?: string[]; errors?: string[] } | undefined;
 
   const statusOf = (m: (typeof CHECKOUT_METHODS)[number]) =>
-    live.includes(m) ? "Live" : !s.enabledMethods.includes(m) ? "Off" : m === "COD" ? "Off" : "Needs account details in the environment file";
+    live.includes(m) ? "Live" : !s.enabledMethods.includes(m) ? "Off" : m === "COD" ? "Off" : m === "AGGREGATOR" ? "Needs the AGGREGATOR_* keys in the environment file" : "Needs account details in the environment file";
 
   return (
     <>
@@ -85,6 +93,81 @@ export default async function ShopSettingsPage({ searchParams }: { searchParams:
               "These details are checked for changes each time the app starts."
             )}
           </p>
+        </Section>
+
+        <Section
+          title="Online payment (card and wallet)"
+          description="Customers who choose “Pay online now” pay on the payment company’s page. The payment company tells the shop by a signed message (callback); an order is marked Paid only from that message or by asking them directly. Keys come from the environment file (AGGREGATOR_*) and are never shown here."
+        >
+          {gw.problems.length || gw.warnings.length ? (
+            <ul className="flex flex-col gap-2 rounded-bezel-sm bg-terracotta/10 px-5 py-4 text-[0.9375rem] font-medium text-terracotta">
+              {[...gw.problems, ...gw.warnings].map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          ) : null}
+          {gw.configured && /localhost|127\.0\.0\.1/.test(site) && gw.mode !== "test" ? (
+            <Notice tone="error">The payment company can’t reach {site}. Set BETTER_AUTH_URL to the shop’s real https address so its messages (and the customer’s return) arrive.</Notice>
+          ) : null}
+          <dl className="grid gap-x-8 gap-y-4 text-[0.9375rem] sm:grid-cols-[14rem_1fr]">
+            <dt className="text-midnight/65">
+              Payment company <code className="block text-xs">AGGREGATOR_VENDOR</code>
+            </dt>
+            <dd className="font-semibold">{gw.configured ? gw.label : <span className="text-midnight/60">Not set up — “Pay online now” is not offered</span>}</dd>
+            <dt className="text-midnight/65">
+              Keys <code className="block text-xs">AGGREGATOR_MERCHANT_ID / _SECRET_KEY / _WEBHOOK_SECRET</code>
+            </dt>
+            <dd>{gw.configured ? "Set (hidden)" : "Not complete"}</dd>
+            <dt className="text-midnight/65">Callback address to give them</dt>
+            <dd className="break-all tabular select-all">{site}/api/webhooks/payments</dd>
+            <dt className="text-midnight/65">Online orders</dt>
+            <dd>
+              {attention.waiting} waiting for payment · {attention.refundDue} paid after cancel (refund due)
+            </dd>
+            <dt className="text-midnight/65">Last full check</dt>
+            <dd>
+              {lastRec?.at ? `${formatKarachi(lastRec.at)} by ${lastRec.by ?? "timer"} — ${lastRec.checked ?? 0} checked, ${lastRec.paid?.length ?? 0} newly paid, ${lastRec.cancelled?.length ?? 0} cancelled${lastRec.errors?.length ? `, ${lastRec.errors.length} could not be checked` : ""}` : "Never — the timer calls /api/cron/reconcile-payments every 10 minutes (BUILD_GUIDE M18)"}
+            </dd>
+          </dl>
+          <div className="flex flex-wrap gap-3">
+            <form action={testGatewayConnection}>
+              <Button type="submit" variant="outline" disabled={!gw.configured}>
+                Test connection
+              </Button>
+            </form>
+            <form action={reconcilePaymentsNow}>
+              <Button type="submit" variant="outline" disabled={!gw.configured}>
+                Check all unpaid online orders now
+              </Button>
+            </form>
+          </div>
+          {callbacks.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <caption className="pb-2 text-left font-semibold">Last messages from the payment company</caption>
+                <thead>
+                  <tr className="text-midnight/65">
+                    <th className="py-1 pr-4 font-medium">Received</th>
+                    <th className="py-1 pr-4 font-medium">Order</th>
+                    <th className="py-1 pr-4 font-medium">Result</th>
+                    <th className="py-1 font-medium">Message id</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {callbacks.map((c) => (
+                    <tr key={c.eventId} className="border-t border-midnight/10 align-top">
+                      <td className="py-1.5 pr-4 whitespace-nowrap">{formatKarachi(c.at)}</td>
+                      <td className="py-1.5 pr-4 tabular">{c.code ?? "—"}</td>
+                      <td className={`py-1.5 pr-4 ${c.status === "FAILED" ? "font-semibold text-terracotta" : ""}`}>{c.status === "FAILED" ? (c.detail ?? "Refused") : (c.detail ?? c.status)}</td>
+                      <td className="py-1.5 tabular break-all">{c.eventId}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-midnight/65">No messages from the payment company yet.</p>
+          )}
         </Section>
 
         <Section title="Email (Gmail)" description="All email from the shop goes through one Gmail account, set in the environment file (GMAIL_*). Free Gmail can send to about 500 recipients a day; the shop stops ordinary mail at the daily limit below and keeps the rest for security alerts.">

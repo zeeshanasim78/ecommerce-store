@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "setup:env": "tsx src/scripts/setup-env.ts",
+    "gateway:test": "tsx tests/helpers/fake-gateway.ts 4020",
     "staff:create": "tsx src/scripts/create-staff.ts",
     "setup": "npm run setup:env && npm run db:setup"
   },

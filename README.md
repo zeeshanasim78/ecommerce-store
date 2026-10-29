@@ -140,3 +140,6 @@ tests/unit/                      Vitest tests
 - **Grade names:** OEM Original, OLED A Grade, Compatible A Grade. Some older SKUs still contain “AAA” — SKUs are internal codes and are never shown to shoppers.
 - **Sample data is placeholder:** the “48,000+ screens sold” and “1,200+ repair shops” figures (marked sample in Admin → Home page), prices, photos (marked "Sample image"), the dispatch hub (Faisalabad), the promotion and coupons. Replace them in the admin.
 - `npm audit` reports moderate issues inside `drizzle-kit`'s own development tooling; it isn't part of the running site.
+
+## Online payments (v1.19)
+Set `AGGREGATOR_VENDOR=test` and the `AGGREGATOR_*` values from `.env.example`, run `npm run gateway:test`, then choose "Card or wallet" at checkout. See SPECIFICATION §31.

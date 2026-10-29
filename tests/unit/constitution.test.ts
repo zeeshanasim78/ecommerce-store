@@ -4,6 +4,7 @@ import { join, relative } from "node:path";
 import { EMAIL_ENV_KEYS } from "@/server/notify/email";
 import { PAYMENT_ENV_KEYS } from "@/server/settings/payment-env";
 import { COURIER_ENV_KEYS } from "@/server/couriers/config";
+import { GATEWAY_ENV_KEYS } from "@/server/payments/config";
 
 /**
  * SPECIFICATION.md §0 (the Constitution) and §10–§11, checked on every `npm test`.
@@ -172,7 +173,7 @@ describe("§11 security rules", () => {
 
 describe("§0.4 rule 5 — .env.example documents every key the app reads", () => {
   it("lists every process.env key used in src/", () => {
-    const used = new Set<string>([...PAYMENT_ENV_KEYS, ...EMAIL_ENV_KEYS, ...COURIER_ENV_KEYS]);
+    const used = new Set<string>([...PAYMENT_ENV_KEYS, ...EMAIL_ENV_KEYS, ...COURIER_ENV_KEYS, ...GATEWAY_ENV_KEYS]);
     for (const f of files("src")) for (const m of read(f).matchAll(/process\.env\.([A-Z_][A-Z0-9_]*)/g)) used.add(m[1]!);
     used.delete("NODE_ENV"); // set by Next.js itself
     used.delete("NEXT_RUNTIME"); // set by Next.js itself (instrumentation)
@@ -230,5 +231,72 @@ describe("v1.18 — content pages (M13)", () => {
       for (const f of files(`src/app/admin/(gated)/${dir}`).filter((f) => /page\.tsx$|actions\.ts$/.test(f))) expect(read(f)).toMatch(/requireStaff\("content"\)/);
     }
     for (const f of files("src/app/admin/(gated)/messages")) expect(read(f)).toMatch(/requireStaff\("messages"\)/);
+  });
+});
+
+describe("v1.19 §31 — online payments (M14)", () => {
+  it("only the payments adapters talk to a payment gateway", () => {
+    const offenders = files("src").filter((f) => !f.startsWith("src/server/payments/") && /\/v1\/payments|x-gateway-signature/i.test(read(f)));
+    expect(offenders).toEqual([]);
+  });
+
+  it("gateway calls are never made inside a database transaction (spec §6.2)", () => {
+    const src = read("src/server/payments/online.ts");
+    const bodies: string[] = [];
+    for (let i = src.indexOf("withStockTransaction("); i >= 0; i = src.indexOf("withStockTransaction(", i + 1)) {
+      let depth = 0;
+      let j = src.indexOf("(", i);
+      const start = j;
+      for (; j < src.length; j++) {
+        if (src[j] === "(") depth++;
+        else if (src[j] === ")" && --depth === 0) break;
+      }
+      bodies.push(src.slice(start, j));
+    }
+    expect(bodies.length).toBeGreaterThan(5);
+    for (const b of bodies) expect(b).not.toMatch(/\bawait\b|createPayment\(|queryStatus\(|\.refund\(|\.ping\(|reconcilePayment\(/);
+  });
+
+  it("the callback route reads the RAW body, verifies the signature before any write, and never trusts the browser", () => {
+    const route = read("src/app/api/webhooks/payments/route.ts");
+    expect(route).toMatch(/await request\.text\(\)/);
+    expect(route).not.toMatch(/request\.json\(\)/);
+    expect(route).toMatch(/processWebhook\(/);
+    expect(route).toMatch(/rateLimit\(/);
+    expect(route).toMatch(/MAX_BODY/);
+    const online = read("src/server/payments/online.ts");
+    expect(online.indexOf("verifyCallback(")).toBeLessThan(online.indexOf(".insert(webhookEvents)"));
+    expect(read("src/server/payments/signature.ts")).toMatch(/timingSafeEqual/);
+  });
+
+  it("an order is marked paid only inside applyGatewayState (callback or status query) — not by pages, actions or adapters", () => {
+    const writers = files("src").filter((f) => /paymentStatus:\s*"PAID"/.test(read(f)));
+    // manual confirmation (bank / wallet, staff), the counter till (cash is handed over in person) and the one gateway function
+    expect(writers.sort()).toEqual(["src/server/counter/pos.ts", "src/server/orders/admin-orders.ts", "src/server/payments/online.ts"]);
+    expect(read("src/server/orders/admin-orders.ts")).toMatch(/AGGREGATOR[\s\S]{0,200}never mark it paid by hand/);
+    const ret = read("src/app/(storefront)/checkout/return/page.tsx");
+    expect(ret).not.toMatch(/\.update\(|paymentStatus:\s*"PAID"/);
+    expect(ret).toMatch(/reconcilePayment\(/);
+  });
+
+  it("the return page only checks for the browser holding the order's private cookie", () => {
+    expect(read("src/app/(storefront)/checkout/return/page.tsx")).toMatch(/await orderIdFromCookie\(/);
+    expect(read("src/app/(storefront)/order/actions.ts")).toMatch(/payOnlineAction[\s\S]*await orderIdFromCookie\(/);
+  });
+
+  it("return and callback addresses come from the configured site address, not the request", () => {
+    const online = read("src/server/payments/online.ts");
+    expect(online).toMatch(/siteUrl\(env\)/);
+    expect(online).not.toMatch(/get\(["']host["']\)|x-forwarded-host/i);
+  });
+
+  it("gateway keys are never shown in the admin pages or put in error text", () => {
+    for (const f of files("src/app/admin").filter((f) => f.endsWith(".tsx"))) expect(read(f)).not.toMatch(/gatewaySecrets|AGGREGATOR_SECRET_KEY\}|process\.env\.AGGREGATOR/);
+    expect(read("src/server/payments/protocol.ts")).not.toMatch(/Error\([^)]*(secretKey|webhookSecret)/);
+  });
+
+  it("the cron endpoint offers reconcile-payments and the test gateway must be on this machine", () => {
+    expect(read("src/app/api/cron/[job]/route.ts")).toMatch(/reconcile-payments/);
+    expect(read("src/server/payments/config.ts")).toMatch(/\^http:\\\/\\\/\(127\\\.0\\\.0\\\.1\|localhost\)/);
   });
 });

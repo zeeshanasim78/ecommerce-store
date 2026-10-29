@@ -45,6 +45,7 @@ export function markProofReceived(db: DB, orderId: string, input: { reference?: 
   const via = ["WHATSAPP", "CALL", "EMAIL", "OTHER"].includes(input.via) ? input.via : "OTHER";
   return withStockTransaction(db, (tx) => {
     const o = load(tx, orderId);
+    if (o.paymentMethod === "AGGREGATOR") throw new OrderActionError("This order is paid online — the payment company confirms it to the shop automatically, so there’s no proof to record. Use “Check payment now” to ask them.");
     if (!isManual(o)) throw new OrderActionError("This order is cash on delivery — there’s no payment proof to record.");
     if (o.fulfillmentStatus === "CANCELLED") throw new OrderActionError("This order is cancelled.");
     if (o.paymentStatus !== "UNPAID") throw new OrderActionError("Proof is already recorded for this order.");
@@ -78,6 +79,7 @@ export function confirmPayment(db: DB, orderId: string, input: { reference?: str
   if (ref && !TID.test(ref)) throw new OrderActionError("Reference / transaction ID: 6–30 letters or numbers.");
   return withStockTransaction(db, (tx) => {
     const o = load(tx, orderId);
+    if (o.paymentMethod === "AGGREGATOR") throw new OrderActionError("This order is paid online — it becomes Paid by itself when the payment company confirms it. Use “Check payment now” to ask them; never mark it paid by hand.");
     if (!isManual(o)) throw new OrderActionError("Cash-on-delivery orders are paid to the courier.");
     if (o.fulfillmentStatus === "CANCELLED") throw new OrderActionError("This order is cancelled — it can’t be marked paid.");
     if (o.paymentStatus === "PAID") throw new OrderActionError("This payment is already confirmed.");
@@ -201,6 +203,8 @@ export function cancelOrder(db: DB, orderId: string, input: { reason: string; re
 export const ORDER_FILTERS = {
   action: "Needs action",
   payment: "Waiting for payment",
+  refund: "Refund due (paid online)",
+  problem: "Payment problem",
   pack: "To pack",
   book: "Packed — book courier",
   courier: "With courier",
@@ -215,15 +219,23 @@ export type OrderFilter = keyof typeof ORDER_FILTERS;
 function filterWhere(f: OrderFilter) {
   const manual = inArray(orders.paymentMethod, [...MANUAL_METHODS]);
   const payable = or(eq(orders.paymentMethod, "COD"), eq(orders.paymentStatus, "PAID"));
+  // v1.19 (M14): online payments — waiting on the gateway, paid after the order was cancelled, or a callback we refused to apply
+  const online = eq(orders.paymentMethod, "AGGREGATOR");
+  const refundDue = and(online, eq(orders.fulfillmentStatus, "CANCELLED"), eq(orders.paymentStatus, "PAID"));
+  const problem = and(online, eq(orders.paymentStatus, "UNPAID"), ne(orders.fulfillmentStatus, "CANCELLED"), sql`EXISTS (SELECT 1 FROM webhook_events w JOIN payments p ON p.id = w.payment_id WHERE p.order_id = ${ORDER_ID} AND w.status = 'FAILED')`);
   switch (f) {
+    case "refund":
+      return refundDue;
+    case "problem":
+      return problem;
     case "payment":
-      return and(manual, inArray(orders.paymentStatus, ["UNPAID", "PENDING_VERIFICATION"]), ne(orders.fulfillmentStatus, "CANCELLED"));
+      return or(and(manual, inArray(orders.paymentStatus, ["UNPAID", "PENDING_VERIFICATION"]), ne(orders.fulfillmentStatus, "CANCELLED")), and(online, eq(orders.paymentStatus, "UNPAID"), ne(orders.fulfillmentStatus, "CANCELLED")));
     case "pack":
       return and(eq(orders.fulfillmentStatus, "CONFIRMED"), payable);
     case "book":
       return and(eq(orders.fulfillmentStatus, "PACKED"), payable);
     case "action":
-      return or(and(manual, eq(orders.paymentStatus, "PENDING_VERIFICATION"), ne(orders.fulfillmentStatus, "CANCELLED")), and(inArray(orders.fulfillmentStatus, ["CONFIRMED", "PACKED"]), payable));
+      return or(and(manual, eq(orders.paymentStatus, "PENDING_VERIFICATION"), ne(orders.fulfillmentStatus, "CANCELLED")), and(inArray(orders.fulfillmentStatus, ["CONFIRMED", "PACKED"]), payable), refundDue, problem);
     case "courier":
       return inArray(orders.fulfillmentStatus, ["BOOKED", "IN_TRANSIT"]);
     case "delivered":

@@ -246,3 +246,23 @@ Stripe does not open accounts for Pakistan-registered businesses. How should int
 | Q101 | Sitemap / robots | Dynamic; lists pages, products and published posts. Everything blocked while the address is localhost. |
 | Q102 | About / FAQ wording | No invented facts (no founding year, address or numbers). Please supply your real story and shop address. |
 | Q103 | Default share image | Not built yet; posts use their cover picture, other pages share without an image. Say if you want a branded one. |
+
+
+## T. Milestone 14 — online payments (2026-10-29) — ★ defaults used until you say otherwise
+
+| Q | Question | ★ Default used |
+|---|---|---|
+| Q104 | Which payment company? | None yet (no merchant account). Built vendor-neutral with a local test gateway; when you pick a company, send me its API document and sandbox keys and I add one adapter file. |
+| Q105 | Where does it show at checkout? | Third choice "Card or wallet (pay online now)", only when a gateway is set up. Gets free delivery like other prepaid orders. |
+| Q106 | How long to wait for payment? | 30 minutes (`unpaid_order_ttl_minutes`), then the order is cancelled and stock released. If the customer pays after that, the money is kept on record and shown as "Refund due". |
+| Q107 | What marks an order paid? | Only a signed callback or our own check with the gateway. Never the customer's browser, never staff by hand. |
+| Q108 | Signature scheme | HMAC-SHA256 over timestamp + raw body, 5-minute tolerance, 64 KB body cap, 300 requests/min per IP. |
+| Q109 | Repeated callbacks | Each event id handled once; repeats answered "duplicate" with no change. |
+| Q110 | Wrong amount | Refused (422), payment marked failed, order untouched, appears under "Payment problem" and in the audit log. |
+| Q111 | Lost callbacks | A job every 10 minutes (schedule it in M18) and a "Check payment now / Check all" button ask the gateway. |
+| Q112 | Retry after failure | Customer can try again until the wait ends. |
+| Q113 | Refunds | Gateway refund button only for cancelled-but-paid orders (full amount). Returns stay recorded by staff (Q83); partial refunds are done in the gateway's own dashboard and not modelled. |
+| Q114 | Emails | "Payment received" email when paid; no new email types. |
+| Q115 | Gateway fees | Not tracked in reports yet. |
+| Q116 | Secrets | Environment file only, never shown in admin or logs. |
+

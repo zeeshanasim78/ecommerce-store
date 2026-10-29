@@ -40,6 +40,8 @@ export function CheckoutForm(props: {
   codPauseMessage: string | null;
   /** v1.12: delivery is free when the customer pays in advance (Shop settings). */
   prepaidFreeDelivery: boolean;
+  /** v1.19: minutes the items are held while the customer pays online. */
+  onlineWaitMinutes: number;
 }) {
   const { cities, methods, codMaxPaisa } = props;
   const router = useRouter();
@@ -48,7 +50,8 @@ export function CheckoutForm(props: {
   const [quote, setQuote] = useState<CartQuote | null>(null);
   const [cityId, setCityId] = useState("");
   // v1.12: two choices — cash on delivery, or place the order and pay in advance (then which account)
-  const [mode, setMode] = useState<"COD" | "PREPAID" | "">("");
+  // v1.19 (M14): a third choice — pay online now on the payment gateway's page
+  const [mode, setMode] = useState<"COD" | "PREPAID" | "ONLINE" | "">("");
   const [pickedPrepaid, setPrepaid] = useState<CheckoutMethod | "">("");
   const [failure, setFailure] = useState<CheckoutFailure | null>(null);
   const [pending, startTransition] = useTransition();
@@ -71,7 +74,8 @@ export function CheckoutForm(props: {
   const discount = quote?.coupon?.ok ? quote.coupon.discountPaisa : 0;
   const beforeFees = quote ? quote.subtotalPaisa - discount : 0;
   const offersCod = methods.some((m) => m.id === "COD");
-  const prepaid = methods.filter((m) => m.id !== "COD");
+  const online = methods.find((m) => m.id === "AGGREGATOR") ?? null;
+  const prepaid = methods.filter((m) => m.id !== "COD" && m.id !== "AGGREGATOR");
   // COD limit is checked as soon as the cart total is known (before a city is chosen too)
   const codTooBig = quote ? beforeFees + (city ? city.feePaisa + city.codFeePaisa : 0) > codMaxPaisa : false;
   const codBlocked = props.codPaused || !offersCod
@@ -86,8 +90,8 @@ export function CheckoutForm(props: {
   // A COD choice that is no longer allowed is dropped, so the shopper must choose again
   const payMode = mode === "COD" && codBlocked ? "" : mode;
   const prepaidMethod = prepaid.find((m) => m.id === pickedPrepaid)?.id ?? prepaid[0]?.id ?? "";
-  const method: CheckoutMethod | "" = payMode === "COD" ? "COD" : payMode === "PREPAID" ? prepaidMethod : "";
-  const freeDelivery = payMode === "PREPAID" && props.prepaidFreeDelivery;
+  const method: CheckoutMethod | "" = payMode === "COD" ? "COD" : payMode === "ONLINE" && online ? "AGGREGATOR" : payMode === "PREPAID" ? prepaidMethod : "";
+  const freeDelivery = (payMode === "PREPAID" || payMode === "ONLINE") && props.prepaidFreeDelivery;
   const deliveryFee = city ? (freeDelivery ? 0 : city.feePaisa) : 0;
   const total = quote && city ? beforeFees + deliveryFee + (method === "COD" ? city.codFeePaisa : 0) : null;
   const shareTo = [props.whatsapp ? `WhatsApp ${props.whatsapp}` : null, props.salesEmail ? `email ${props.salesEmail}` : null].filter((x): x is string => Boolean(x));
@@ -95,7 +99,7 @@ export function CheckoutForm(props: {
   if (placedCode) {
     return (
       <p role="status" className="mt-10 rounded-bezel bg-midnight p-8 text-lg font-semibold text-canvas">
-        Order {placedCode} placed. Opening your confirmation…
+        Order {placedCode} placed. {payMode === "ONLINE" ? "Opening the secure payment page…" : "Opening your confirmation…"}
       </p>
     );
   }
@@ -156,7 +160,12 @@ export function CheckoutForm(props: {
       if (result.ok) {
         setPlacedCode(result.code);
         cart.clear();
-        router.push(`/checkout/success?order=${encodeURIComponent(result.code)}`);
+        // Online payment: on to the gateway's own page (a full page load — it is another website)
+        if (result.payUrl) {
+          window.location.assign(result.payUrl);
+          return;
+        }
+        router.push(`/checkout/success?order=${encodeURIComponent(result.code)}${result.payNote ? "&pay=retry" : ""}`);
         return;
       }
       setFailure(result);
@@ -250,6 +259,19 @@ export function CheckoutForm(props: {
                 </span>
               </label>
 
+              {online ? (
+                <label className={cn("flex cursor-pointer items-start gap-3 rounded-bezel-sm bg-white p-5 ring-1 transition-shadow", payMode === "ONLINE" ? "ring-2 ring-midnight" : "ring-midnight/15 hover:ring-midnight/40")}>
+                  <input type="radio" name="payMode" value="ONLINE" required checked={payMode === "ONLINE"} onChange={() => setMode("ONLINE")} className="mt-1 size-5 accent-midnight" />
+                  <span className="min-w-0">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg font-semibold">Pay online now</span>
+                      {props.prepaidFreeDelivery ? <span className="rounded-full bg-terracotta px-2.5 py-0.5 text-xs font-bold tracking-wide text-white uppercase">Free delivery</span> : null}
+                    </span>
+                    <span className="mt-1 block text-sm text-midnight/70">Pay with your card or mobile wallet on a secure payment page. Your payment is confirmed in seconds — no screenshot to send.</span>
+                  </span>
+                </label>
+              ) : null}
+
               {prepaid.length ? (
                 <label className={cn("flex cursor-pointer items-start gap-3 rounded-bezel-sm bg-white p-5 ring-1 transition-shadow", payMode === "PREPAID" ? "ring-2 ring-midnight" : "ring-midnight/15 hover:ring-midnight/40")}>
                   <input type="radio" name="payMode" value="PREPAID" required checked={payMode === "PREPAID"} onChange={() => setMode("PREPAID")} className="mt-1 size-5 accent-midnight" />
@@ -267,7 +289,7 @@ export function CheckoutForm(props: {
             </div>
           </fieldset>
 
-          {codBlocked && !prepaid.length ? (
+          {codBlocked && !prepaid.length && !online ? (
             <p role="note" className="rounded-bezel-sm bg-surface px-5 py-4 text-[0.9375rem]">
               To order, please contact us and we’ll arrange payment
               {props.storePhone ? (
@@ -290,6 +312,18 @@ export function CheckoutForm(props: {
               ) : null}
               .
             </p>
+          ) : null}
+
+          {payMode === "ONLINE" ? (
+            <div role="note" className="rounded-bezel-sm bg-surface px-5 py-4 text-[0.9375rem]">
+              <p className="font-semibold">What happens when you press the button</p>
+              <ol className="mt-2 flex list-decimal flex-col gap-1 pl-5 text-midnight/80">
+                <li>We save your order and hold the items for {props.onlineWaitMinutes} minutes.</li>
+                <li>You go to the payment company’s secure page and pay {total !== null ? rs(total) : "the total"} by card or wallet.</li>
+                <li>When the payment company confirms it, we email you and start packing. Never close the payment page before it says “done”.</li>
+              </ol>
+              <p className="mt-2 text-sm text-midnight/65">If the page closes or the payment fails, open your order (link in your email) and press “Pay online now” again. If it isn’t paid within {props.onlineWaitMinutes} minutes the order is cancelled and the items go back on sale.</p>
+            </div>
           ) : null}
 
           {payMode === "PREPAID" ? (
@@ -403,7 +437,7 @@ export function CheckoutForm(props: {
         ) : null}
 
         <Button type="submit" variant="urgent" size="lg" className="mt-6 w-full" disabled={pending || !cityId || !method || (method === "COD" && Boolean(codBlocked))} aria-busy={pending}>
-          {pending ? "Placing your order…" : `${payMode === "PREPAID" ? "Place order & pay in advance" : "Place order"}${total !== null ? ` · ${rs(total)}` : ""}`}
+          {pending ? (payMode === "ONLINE" ? "Opening the payment page…" : "Placing your order…") : `${payMode === "ONLINE" ? "Pay online now" : payMode === "PREPAID" ? "Place order & pay in advance" : "Place order"}${total !== null ? ` · ${rs(total)}` : ""}`}
         </Button>
         <p className="mt-3 text-sm text-midnight/65">By ordering you agree to our warranty and returns terms. We email your order details and confirm before dispatch.</p>
       </aside>

@@ -5,7 +5,7 @@ import { FULFILLMENT_LABEL, PAYMENT_LABEL } from "@/lib/order-labels";
 import { formatMoney, paisa } from "@/lib/money";
 import { formatPkMobile } from "@/lib/phone";
 import { parseTimestamp } from "@/lib/time";
-import { MANUAL_METHODS, METHOD_LABEL, getCheckoutSettings, payToLines, prepaidMethods, type CheckoutMethod, type CheckoutSettings } from "@/server/settings/store-settings";
+import { MANUAL_METHODS, METHOD_LABEL, isOnlineMethod, getCheckoutSettings, payToLines, manualPrepaidMethods, type CheckoutMethod, type CheckoutSettings } from "@/server/settings/store-settings";
 
 /**
  * One description of an order for the customer: used by the order page, the PDF and the emails
@@ -41,6 +41,10 @@ export type CustomerOrder = {
   cancelReason: string | null;
   /** Prepaid order still waiting for money (or for the shop to receive the screenshot). */
   awaitingPayment: boolean;
+  /** v1.19 (M14): an online-payment order that can still be paid on the gateway's page ("Pay online now"). */
+  payOnline: boolean;
+  /** v1.19: the gateway said the last try did not go through (customer-safe words). */
+  onlineFailure: string | null;
   /** Accounts to pay into, the one chosen at checkout first. Empty unless awaitingPayment. */
   payTo: PayAccount[];
   payDeadline: string | null;
@@ -83,7 +87,13 @@ export function loadCustomerOrder(db: DB | Tx, orderId: string, settings?: Check
   const method = order.paymentMethod as CheckoutMethod;
   const cancelled = order.fulfillmentStatus === "CANCELLED";
   const awaitingPayment = MANUAL_METHODS.includes(method) && (order.paymentStatus === "UNPAID" || order.paymentStatus === "PENDING_VERIFICATION") && !cancelled;
-  const ordered = [method, ...prepaidMethods(s).filter((m) => m !== method)];
+  // v1.19 (M14): online payment — still unpaid, not cancelled, inside the wait (default 30 minutes)
+  const online = isOnlineMethod(method);
+  const payRow = online ? db.select().from(payments).where(eq(payments.orderId, order.id)).get() : undefined;
+  const placedMs = parseTimestamp(order.placedAt);
+  const onlineDeadlineMs = Number.isFinite(placedMs) ? placedMs + s.unpaidTtlMinutes * 60_000 : NaN;
+  const payOnline = online && order.paymentStatus === "UNPAID" && !cancelled && Number.isFinite(onlineDeadlineMs) && Date.now() <= onlineDeadlineMs && s.gatewayReady;
+  const ordered = [method, ...manualPrepaidMethods(s).filter((m) => m !== method)];
   const payTo = awaitingPayment
     ? ordered.flatMap((m) => {
         const lines = payToLines(s, m);
@@ -110,8 +120,10 @@ export function loadCustomerOrder(db: DB | Tx, orderId: string, settings?: Check
     cancelled,
     cancelReason: order.cancelReason,
     awaitingPayment,
+    payOnline,
+    onlineFailure: payRow?.status === "FAILED" && order.paymentStatus === "UNPAID" && !cancelled ? (payRow.failureReason ?? "The payment wasn’t completed.") : null,
     payTo,
-    payDeadline: awaitingPayment && order.paymentStatus === "UNPAID" && Number.isFinite(placed) ? new Date(placed + s.manualTtlMinutes * 60_000).toISOString() : null,
+    payDeadline: payOnline ? new Date(onlineDeadlineMs).toISOString() : awaitingPayment && order.paymentStatus === "UNPAID" && Number.isFinite(placed) ? new Date(placed + s.manualTtlMinutes * 60_000).toISOString() : null,
     waitHours: Math.round(s.manualTtlMinutes / 60),
     eta: zone && !cancelled ? `${zone.etaMinDays}–${zone.etaMaxDays} working days after dispatch` : null,
     shipment: ship
@@ -152,11 +164,19 @@ const rs = (n: number) => formatMoney(paisa(n));
  * The steps a prepaid customer follows (owner request v1.11): pay with the order number in the
  * remarks, then send the screenshot by WhatsApp / call / email; the shop confirms, then dispatches.
  */
-export function paymentSteps(o: Pick<CustomerOrder, "code" | "totalPaisa" | "contact" | "waitHours" | "paymentStatus">): string[] {
+export function paymentSteps(o: Pick<CustomerOrder, "code" | "totalPaisa" | "contact" | "waitHours" | "paymentStatus" | "method">): string[] {
   // v1.12 owner wording: payment slip + transaction ID + order number, by WhatsApp or email, within 24 hours
   const ways = [o.contact.whatsapp ? `WhatsApp ${o.contact.whatsapp}` : null, o.contact.email ? `email ${o.contact.email}` : null].filter((x): x is string => Boolean(x));
   const share = ways.length ? ways.join(" or ") : o.contact.phone ? `call ${o.contact.phone}` : "contact us";
   const questions = o.contact.phone ? `Questions? Call ${o.contact.phone} with your order number.` : null;
+  if (isOnlineMethod(o.method)) {
+    return [
+      `Pay ${rs(o.totalPaisa)} on the secure payment page with your card or wallet — use “Pay online now” on your order page.`,
+      "We see your payment as soon as the payment company confirms it, then email you a payment confirmation. You don’t need to send us a screenshot.",
+      "If the page closed before you finished, just use “Pay online now” again. Orders that are not paid in time are cancelled and the stock goes back on sale.",
+      ...(questions ? [questions] : []),
+    ];
+  }
   if (o.paymentStatus === "PENDING_VERIFICATION") {
     return [
       "We have your payment details and are checking them with the bank / wallet.",

@@ -167,6 +167,14 @@ export const payments = sqliteTable(
     verifiedAt: text("verified_at"),
     rawResponseHash: text("raw_response_hash"),
     createdAt: timestamp("created_at"),
+    // ---- v1.19 (M14, spec §31) ----
+    /** Last time the gateway was asked about this payment (reconciliation / return page). */
+    checkedAt: text("checked_at"),
+    /** Why the gateway said the payment failed, in the customer-safe words we keep. */
+    failureReason: text("failure_reason"),
+    /** Money actually paid back through the gateway (0 until a gateway refund is made). */
+    refundedPaisa: integer("refunded_paisa").default(0).notNull(),
+    refundRef: text("refund_ref"),
   },
   (t) => [
     check("payments_provider", inList("provider", PAYMENT_PROVIDERS)),
@@ -231,6 +239,9 @@ export const webhookEvents = sqliteTable(
     processedAt: text("processed_at"),
     status: text("status", { enum: ["RECEIVED", "PROCESSED", "IGNORED", "FAILED"] }).default("RECEIVED").notNull(),
     payloadSha256: text("payload_sha256").notNull(),
+    /** v1.19 (M14): the payment this event was about, and what we did with it. */
+    paymentId: text("payment_id"),
+    detail: text("detail"),
   },
   (t) => [
     uniqueIndex("webhook_events_provider_event_unique").on(t.provider, t.eventId),

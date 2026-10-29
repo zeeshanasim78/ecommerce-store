@@ -7,12 +7,14 @@ import { requireStaff } from "@/server/dal";
 import { text } from "@/server/forms";
 import { sendOrderEmail, type EmailKind } from "@/server/notify/order-emails";
 import { and, eq, inArray, ne } from "drizzle-orm";
-import { orders, settings, shipments } from "@/db/schema";
+import { orders, payments, settings, shipments } from "@/db/schema";
 import { API_COURIERS, type ApiCourier } from "@/db/schema/logistics";
 import { liveCourierDeps } from "@/server/couriers";
 import { OrderActionError, cancelOrder, confirmPayment, dispatchOrder, markProofReceived } from "@/server/orders/admin-orders";
 import { bookManyWithCourier, bookWithCourier, cancelBooking, createLoadSheet, markDelivered, markInTransit, markPacked, receiveReturnedParcel, syncTracking, type SyncSummary } from "@/server/orders/fulfilment";
 import { revalidateStorefront } from "@/server/revalidate";
+import { liveGatewayDeps } from "@/server/payments";
+import { OnlinePayError, reconcilePayment, refundOnlinePayment } from "@/server/payments/online";
 
 /**
  * Orders admin actions (M10 Phase A, v1.11 §23). OWNER/MANAGER via requireStaff("orders").
@@ -290,4 +292,40 @@ export async function bulkAction(fd: FormData) {
     goTo(`/admin/orders/load-sheets/${ls.id}`);
   }
   goTo(back, { error: "Choose what to do with the ticked orders." });
+}
+
+/** v1.19 (M14): ask the payment gateway about this order's payment right now (server to server) and apply the answer. */
+export async function checkOnlinePaymentAction(fd: FormData) {
+  const staff = await requireStaff("orders");
+  const id = orderId(fd);
+  const pay = db.select({ id: payments.id }).from(payments).where(and(eq(payments.orderId, id), eq(payments.provider, "AGGREGATOR"))).get();
+  if (!pay) goTo(page(id), { error: "This order has no online payment." });
+  const r = await reconcilePayment(db, liveGatewayDeps(), pay!.id);
+  if (r.kind === "ERROR") goTo(page(id), { error: `Couldn’t ask the payment company: ${r.message}` });
+  if (r.kind === "NOT_STARTED") goTo(page(id), { saved: "The customer never opened the payment page, so there is nothing to check yet." });
+  if (r.kind === "SKIPPED") goTo(page(id));
+  const o = (r as Extract<typeof r, { kind: "CHECKED" }>).outcome;
+  let note = "Checked with the payment company: no change.";
+  if (o.kind === "PAID") note = `Payment confirmed by the payment company — order is now Paid.${await emailNote(id, "PAYMENT_CONFIRMED", staff.id)}`;
+  else if (o.kind === "LATE_PAYMENT") note = "The customer paid AFTER the order was cancelled. Refund them below (or ask them if they still want the items).";
+  else if (o.kind === "MISMATCH") note = `The payment company reports a different amount (${o.why}). Nothing was changed — contact them before shipping anything.`;
+  else if (o.kind === "FAILED_RECORDED") note = "The payment company says the payment did not go through. The customer can try again.";
+  else if (o.kind === "ALREADY_PAID") note = "Already confirmed as paid.";
+  revalidateStorefront();
+  goTo(page(id), o.kind === "MISMATCH" ? { error: note } : { saved: note });
+}
+
+/** v1.19 (M14): pay a cancelled-but-paid online order back through the gateway. Explicit click + tick; audited. */
+export async function refundOnlinePaymentAction(fd: FormData) {
+  const staff = await requireStaff("orders");
+  const id = orderId(fd);
+  if (fd.get("sure") !== "on") goTo(page(id), { error: "Tick the box to confirm the money goes back to the customer." });
+  const ctx = await auditContext();
+  try {
+    const r = await refundOnlinePayment(db, liveGatewayDeps(), id, { actorId: staff.id }, ctx);
+    goTo(page(id), { saved: `${r.code}: Rs ${(r.amountPaisa / 100).toLocaleString("en-PK")} refunded through the payment gateway.` });
+  } catch (e) {
+    if (e instanceof OnlinePayError) goTo(page(id), { error: e.message });
+    throw e;
+  }
 }

@@ -3,6 +3,8 @@ import { buttonClasses } from "@/components/ui/button";
 import { formatMoney, paisa } from "@/lib/money";
 import { formatKarachi } from "@/lib/time";
 import { deliveryLabel, paymentSteps, type CustomerOrder } from "@/server/orders/order-details";
+import { Button } from "@/components/ui/button";
+import { payOnlineAction } from "@/app/(storefront)/order/actions";
 import { TidForm } from "./tid-form";
 
 const rs = (n: number) => formatMoney(paisa(n));
@@ -12,7 +14,14 @@ const rs = (n: number) => formatMoney(paisa(n));
  * the browser holds the order's private cookie. Includes the PDF download and, for prepaid orders,
  * how to pay and where to send the screenshot.
  */
-export function OrderSummary({ o }: { o: CustomerOrder }) {
+export const PAY_NOTICE: Record<string, string> = {
+  retry: "We saved your order but couldn’t open the payment page just now. Press “Pay online now” below to try again.",
+  unavailable: "We couldn’t open the payment page just now. Please try again in a minute, or call us.",
+  closed: "This order can no longer be paid online — it is already paid, cancelled, or the time to pay ran out.",
+  slow: "Too many tries. Please wait a few minutes and try again.",
+};
+
+export function OrderSummary({ o, notice }: { o: CustomerOrder; notice?: string }) {
   const wa = o.contact.whatsapp?.replace(/\D/g, "").replace(/^0/, "92");
   const waText = `Assalam o Alaikum, I have paid ${rs(o.totalPaisa)} for order ${o.code}. Payment slip attached. Transaction ID: `;
   const steps = paymentSteps(o);
@@ -53,6 +62,43 @@ export function OrderSummary({ o }: { o: CustomerOrder }) {
           {o.eta ? <p className="mt-2 text-[0.9375rem] text-midnight/75">Delivery: {o.eta}.</p> : null}
           {o.method === "COD" && !o.cancelled ? <p className="mt-4 rounded-bezel-sm bg-surface px-5 py-4">Please keep {rs(o.totalPaisa)} in cash ready for the courier. We’ll call or WhatsApp you to confirm before we send it.</p> : null}
         </section>
+
+        {notice && PAY_NOTICE[notice] ? (
+          <p role="alert" className="rounded-bezel-sm bg-terracotta/10 px-5 py-4 font-medium text-terracotta">
+            {PAY_NOTICE[notice]}
+          </p>
+        ) : null}
+
+        {o.method === "AGGREGATOR" && o.paymentStatus === "UNPAID" && !o.cancelled ? (
+          <section className="rounded-bezel bg-white p-6 ring-2 ring-terracotta/40 sm:p-8" aria-labelledby="online-heading">
+            <h2 id="online-heading" className="font-sans text-xl font-semibold">
+              {o.payOnline ? `Order placed — pay ${rs(o.totalPaisa)} online` : "The time to pay this order has run out"}
+            </h2>
+            {o.onlineFailure ? <p className="mt-2 font-medium text-terracotta">{o.onlineFailure} No money was taken for this order — you can try again.</p> : null}
+            {o.payOnline ? (
+              <>
+                <ol className="mt-4 flex list-decimal flex-col gap-2 pl-5 text-[0.9375rem]">
+                  {steps.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ol>
+                {o.payDeadline ? (
+                  <p className="mt-3 font-semibold">
+                    Please pay by <span className="tabular">{formatKarachi(o.payDeadline)}</span>.
+                  </p>
+                ) : null}
+                <form action={payOnlineAction} className="mt-5">
+                  <input type="hidden" name="code" value={o.code} />
+                  <Button type="submit" size="lg">
+                    Pay online now · {rs(o.totalPaisa)}
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <p className="mt-2 text-[0.9375rem] text-midnight/75">Unpaid online orders are cancelled after a short wait so the items can go back on sale. Please place a new order{o.contact.phone ? ` or call ${o.contact.phone}` : ""}. If you already paid, don’t worry — we’ll find it and contact you.</p>
+            )}
+          </section>
+        ) : null}
 
         {o.awaitingPayment ? (
           <section className="rounded-bezel bg-white p-6 ring-2 ring-terracotta/40 sm:p-8" aria-labelledby="pay-heading">

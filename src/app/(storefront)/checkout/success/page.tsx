@@ -24,8 +24,9 @@ export const dynamic = "force-dynamic";
  * sees the full order details, how to pay, and the PDF download. Anyone else with only the order
  * number sees the number and total — no name, phone or address (Q39).
  */
-export default async function CheckoutSuccessPage({ searchParams }: { searchParams: Promise<{ order?: string }> }) {
-  const code = cleanOrderCode((await searchParams).order ?? "");
+export default async function CheckoutSuccessPage({ searchParams }: { searchParams: Promise<{ order?: string; pay?: string }> }) {
+  const sp = await searchParams;
+  const code = cleanOrderCode(sp.order ?? "");
   if (!code) notFound();
   const orderId = await orderIdFromCookie(code);
   const full = orderId ? loadCustomerOrder(db, orderId) : null;
@@ -43,7 +44,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
             </>
           ) : null}
         </p>
-        <OrderSummary o={full} />
+        <OrderSummary o={full} notice={sp.pay} />
         <div className="mt-8">
           <Link href="/store" className={buttonClasses("ghost")}>
             Keep shopping

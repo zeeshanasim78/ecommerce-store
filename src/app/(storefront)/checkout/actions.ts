@@ -6,11 +6,18 @@ import { db } from "@/db/client";
 import { sendOrderPlacedEmails } from "@/server/notify/order-emails";
 import { cookieOptions, orderCookieName } from "@/server/orders/access";
 import { placeOrder, type CheckoutResult } from "@/server/orders/checkout";
+import { liveGatewayDeps } from "@/server/payments";
+import { OnlinePayError, startOnlinePayment } from "@/server/payments/online";
+import { isOnlineMethod } from "@/server/settings/store-settings";
 import { clientIp, rateLimit } from "@/server/rate-limit";
 import { revalidateStorefront } from "@/server/revalidate";
 
-/** What the browser gets back: never the access token itself (it goes into an httpOnly cookie). */
-export type PlaceOrderResponse = Exclude<CheckoutResult, { ok: true }> | { ok: true; code: string };
+/**
+ * What the browser gets back: never the access token itself (it goes into an httpOnly cookie).
+ * `payUrl` (v1.19, M14) is the payment gateway's page for an "pay online now" order: the browser goes there next.
+ * `payNote` explains why there is none (the order is saved; the order page offers "Pay online now" again).
+ */
+export type PlaceOrderResponse = Exclude<CheckoutResult, { ok: true }> | { ok: true; code: string; payUrl?: string; payNote?: string };
 
 /** Place an order (spec §6.3). All the rules live in server/orders/checkout.ts. */
 export async function placeOrderAction(input: unknown): Promise<PlaceOrderResponse> {
@@ -32,6 +39,16 @@ export async function placeOrderAction(input: unknown): Promise<PlaceOrderRespon
     // Customer + sales emails after the response is sent — a slow or failing Gmail never blocks the order
     const { orderId, accessToken } = result;
     after(() => sendOrderPlacedEmails(db, orderId, accessToken));
+  }
+  // v1.19 (M14): online payment — open the payment at the gateway and send the customer there
+  if (isOnlineMethod(result.method) && !result.repeated) {
+    try {
+      const { redirectUrl } = await startOnlinePayment(db, liveGatewayDeps(), result.orderId);
+      return { ok: true, code: result.code, payUrl: redirectUrl };
+    } catch (e) {
+      if (e instanceof OnlinePayError) return { ok: true, code: result.code, payNote: e.message };
+      throw e;
+    }
   }
   return { ok: true, code: result.code };
 }

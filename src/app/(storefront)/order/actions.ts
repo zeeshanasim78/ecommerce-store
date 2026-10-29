@@ -1,10 +1,13 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { cookieOptions, issueOrderToken, orderCookieName } from "@/server/orders/access";
 import { findCustomerOrder, submitTransactionIdForOrder, TidError } from "@/server/orders/checkout";
 import { cleanOrderCode, orderIdFromCookie } from "@/server/orders/order-cookie";
+import { liveGatewayDeps } from "@/server/payments";
+import { OnlinePayError, startOnlinePayment } from "@/server/payments/online";
 import { clientIp, rateLimit } from "@/server/rate-limit";
 
 export type LookupState = { opened?: string; error?: string };
@@ -58,4 +61,27 @@ export async function addTransactionId(_prev: TidState, formData: FormData): Pro
     throw e;
   }
   return { done: true };
+}
+
+/**
+ * "Pay online now" (v1.19, M14): opens (or re-opens) the payment at the gateway and sends the customer
+ * there. Allowed only in a browser holding the order's private cookie; the rules (still unpaid, inside the
+ * wait) are in startOnlinePayment.
+ */
+export async function payOnlineAction(formData: FormData) {
+  const code = cleanOrderCode(String(formData.get("code") ?? ""));
+  if (!code) redirect("/order");
+  const back = (pay: "unavailable" | "closed" | "slow") => redirect(`/order/${code}?pay=${pay}`);
+  const ip = clientIp(await headers());
+  if (!rateLimit(`pay:${ip}`, 10, 10 * 60_000).ok) return back("slow");
+  const orderId = await orderIdFromCookie(code);
+  if (!orderId) return redirect(`/order/${code}`);
+  let url: string;
+  try {
+    url = (await startOnlinePayment(db, liveGatewayDeps(), orderId)).redirectUrl;
+  } catch (e) {
+    if (e instanceof OnlinePayError) return back(/no longer|already paid|cancelled|run out|isn’t an online/i.test(e.message) ? "closed" : "unavailable");
+    throw e;
+  }
+  redirect(url);
 }

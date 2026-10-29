@@ -27,7 +27,8 @@ export type SettingKey =
   | "prepaid_free_delivery" // v1.12: true = no delivery charge when the customer pays in advance
   | "courier_cities_leopards" // v1.15: Leopards' city list, as last loaded from its API
   | "courier_cities_postex" // v1.15: PostEx's operational cities, as last loaded from its API
-  | "tracking_sync_last"; // v1.15: when tracking was last synced, and what it found
+  | "tracking_sync_last" // v1.15: when tracking was last synced, and what it found
+  | "payment_reconcile_last"; // v1.19: when online payments were last checked against the gateway, and what it found
 
 export const settings = sqliteTable("settings", {
   key: text("key").$type<SettingKey>().primaryKey(),

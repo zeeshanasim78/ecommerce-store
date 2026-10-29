@@ -226,7 +226,7 @@ export async function buildOrderPdf(o: CustomerOrder, generatedAt: Date = new Da
   totalRow("Total", rs(o.totalPaisa), true);
 
   // How to pay (prepaid orders still waiting)
-  if (o.awaitingPayment) {
+  if (o.awaitingPayment || o.payOnline) {
     heading("How to pay");
     paymentSteps(o).forEach((s, n) => write(`${n + 1}. ${s}`, { x: M + 4 }));
     if (o.payDeadline) write(`Please pay by ${formatKarachi(o.payDeadline)}.`, { font: bold });

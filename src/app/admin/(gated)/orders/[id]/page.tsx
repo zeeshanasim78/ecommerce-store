@@ -18,7 +18,9 @@ import { orderEmailLog } from "@/server/notify/order-emails";
 import { COURIER_LABEL, loadCustomerOrder, orderPayment } from "@/server/orders/order-details";
 import { REASON_LABEL, STATUS_LABEL as RETURN_STATUS_LABEL, returnsForOrder } from "@/server/returns/returns";
 import { MANUAL_METHODS } from "@/server/settings/store-settings";
-import { bookAction, cancelAction, cancelBookingAction, confirmPaymentAction, deliveredAction, dispatchAction, inTransitAction, packAction, proofReceivedAction, receiveReturnAction, refreshTrackingAction, resendEmailAction } from "../actions";
+import { onlinePaymentView } from "@/server/payments/online";
+import { readGatewayConfig } from "@/server/payments/config";
+import { bookAction, cancelAction, checkOnlinePaymentAction, refundOnlinePaymentAction, cancelBookingAction, confirmPaymentAction, deliveredAction, dispatchAction, inTransitAction, packAction, proofReceivedAction, receiveReturnAction, refreshTrackingAction, resendEmailAction } from "../actions";
 
 export const metadata = { title: "Online order" };
 export const dynamic = "force-dynamic";
@@ -112,6 +114,9 @@ export default async function OrderAdminPage({ params, searchParams }: { params:
   const canConfirm = manual && (o.paymentStatus === "UNPAID" || o.paymentStatus === "PENDING_VERIFICATION") && !o.cancelled;
   const canCancel = ["NEW", "CONFIRMED", "PACKED"].includes(o.fulfillmentStatus);
   const paid = o.paymentStatus === "PAID";
+  // v1.19 (M14): online payment — paid by the payment company's signed callback, never by hand
+  const online = o.method === "AGGREGATOR" ? onlinePaymentView(db, id) : null;
+  const gw = readGatewayConfig();
 
   return (
     <>
@@ -170,6 +175,64 @@ export default async function OrderAdminPage({ params, searchParams }: { params:
               </dl>
             ) : null}
           </Section>
+
+          {online ? (
+            <Section title="Online payment" description="Paid on the payment company’s page. The order turns Paid only when their signed message arrives (or when the shop asks them directly) — never from the customer’s browser, and never by hand.">
+              {online.refundDue ? (
+                <p role="alert" className="rounded-bezel-sm bg-terracotta/10 px-5 py-4 font-semibold text-terracotta">
+                  This order was cancelled, but the customer paid {rs(online.amountPaisa)}. The money is waiting to be refunded.
+                </p>
+              ) : null}
+              {online.problems.length ? (
+                <ul className="flex flex-col gap-1 rounded-bezel-sm bg-terracotta/10 px-5 py-4 text-[0.9375rem] font-medium text-terracotta">
+                  {online.problems.map((p) => (
+                    <li key={p.at + p.detail}>
+                      {formatKarachi(p.at)} — {p.detail || "A message from the payment company was refused."} The order was NOT changed. Check the payment in the payment company’s dashboard before shipping anything.
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <dl className="grid gap-x-6 gap-y-1 text-[0.9375rem] sm:grid-cols-[12rem_1fr]">
+                <dt className="text-midnight/65">Payment company</dt>
+                <dd>{gw.configured ? gw.label : <span className="text-terracotta">Not set up right now</span>}</dd>
+                <dt className="text-midnight/65">Their payment number</dt>
+                <dd className="tabular break-all">{online.providerRef ?? "— (the customer hasn’t opened the payment page)"}</dd>
+                <dt className="text-midnight/65">Status</dt>
+                <dd>{online.status === "SUCCEEDED" ? "Paid" : online.status === "REFUNDED" ? `Refunded (${rs(online.refundedPaisa)})` : online.status === "FAILED" ? `Failed${online.failureReason ? ` — ${online.failureReason}` : ""}` : online.status === "PENDING" ? "Waiting for the customer to pay" : "Not started"}</dd>
+                {online.verifiedAt ? (
+                  <>
+                    <dt className="text-midnight/65">Confirmed</dt>
+                    <dd>{formatKarachi(online.verifiedAt)}</dd>
+                  </>
+                ) : null}
+                <dt className="text-midnight/65">Last asked them</dt>
+                <dd>{online.checkedAt ? formatKarachi(online.checkedAt) : "Not yet — the shop asks every 10 minutes while the order is unpaid"}</dd>
+              </dl>
+              {!online.verifiedAt && online.providerRef ? (
+                <form action={checkOnlinePaymentAction}>
+                  <input type="hidden" name="orderId" value={o.id} />
+                  <Button type="submit" variant="outline">
+                    Check payment now
+                  </Button>
+                </form>
+              ) : null}
+              {online.canRefund ? (
+                <form action={refundOnlinePaymentAction} className="grid gap-4 rounded-bezel-sm bg-surface p-5">
+                  <input type="hidden" name="orderId" value={o.id} />
+                  <p className="font-semibold">Refund {rs(online.amountPaisa)} to the customer’s card / wallet</p>
+                  <label className="flex items-start gap-3 text-[0.9375rem]">
+                    <input type="checkbox" name="sure" required className="mt-1 size-5 accent-midnight" />
+                    The order is cancelled and the customer should get all {rs(online.amountPaisa)} back through the payment company. This can’t be undone.
+                  </label>
+                  <div>
+                    <Button type="submit" variant="urgent">
+                      Refund through the payment company
+                    </Button>
+                  </div>
+                </form>
+              ) : null}
+            </Section>
+          ) : null}
 
           {canProof || canConfirm ? (
             <Section title="Payment" description="The customer pays into the shop’s account with the order number in the remarks and sends a screenshot by WhatsApp, a call or email.">

@@ -9,6 +9,11 @@ import { text } from "@/server/forms";
 import { revalidateStorefront } from "@/server/revalidate";
 import { alertRecipients, sendEmail } from "@/server/notify/email";
 import { acknowledgePaymentAlert } from "@/server/settings/payment-integrity";
+import { liveGatewayDeps, readGatewayConfig } from "@/server/payments";
+import { expireOnlineOrders, reconcilePending } from "@/server/payments/online";
+import { sendOrderEmail } from "@/server/notify/order-emails";
+import { orders, settings } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { CHECKOUT_METHODS, cleanLine, getCheckoutSettings, writeSetting } from "@/server/settings/store-settings";
 
 const PATH = "/admin/settings";
@@ -99,4 +104,42 @@ export async function sendTestEmail() {
   const ctx = await auditContext();
   db.transaction((tx) => writeAudit(tx, ctx, { actorId: staff.id, action: result.sent ? "email.test_sent" : "email.test_failed", entity: "settings", entityId: "email", after: result }));
   goTo(PATH, result.sent ? { saved: `Test email sent to ${to.join(", ")}. Check the inbox (and the spam folder the first time).` } : { error: result.detail });
+}
+
+/** Owner checks the payment gateway keys with one harmless authenticated call (v1.19, M14). Audited. */
+export async function testGatewayConnection() {
+  const staff = await requireStaff("settings");
+  const cfg = readGatewayConfig();
+  let result: { ok: boolean; detail: string };
+  if (!cfg.configured) result = { ok: false, detail: cfg.problems[0] ?? "Online payment isn’t set up in the environment file." };
+  else {
+    try {
+      await liveGatewayDeps().gateway().ping();
+      result = { ok: true, detail: "The payment gateway answered and accepted the keys." };
+    } catch (e) {
+      result = { ok: false, detail: e instanceof Error ? e.message : "The payment gateway couldn’t be reached." };
+    }
+  }
+  const ctx = await auditContext();
+  db.transaction((tx) => writeAudit(tx, ctx, { actorId: staff.id, action: result.ok ? "gateway.test_ok" : "gateway.test_failed", entity: "settings", entityId: "gateway", after: { ...result, vendor: cfg.vendor } }));
+  goTo(PATH, result.ok ? { saved: result.detail } : { error: result.detail });
+}
+
+/** Owner asks the gateway about every unsettled online payment now, instead of waiting for the 10-minute timer. Audited. */
+export async function reconcilePaymentsNow() {
+  const staff = await requireStaff("settings");
+  const deps = liveGatewayDeps();
+  if (!deps.isConfigured()) goTo(PATH, { error: "Online payment isn’t set up." });
+  const summary = await reconcilePending(db, deps, new Date(), { minAgeSeconds: 0 });
+  const cancelled = await expireOnlineOrders(db, deps);
+  const value = { at: new Date().toISOString(), by: staff.name, ...summary, cancelled };
+  db.insert(settings).values({ key: "payment_reconcile_last", value }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: value.at } }).run();
+  for (const code of summary.paid) {
+    const o = db.select({ id: orders.id }).from(orders).where(eq(orders.code, code)).get();
+    if (o) await sendOrderEmail(db, { orderId: o.id, kind: "PAYMENT_CONFIRMED", actorId: staff.id });
+  }
+  const ctx = await auditContext();
+  db.transaction((tx) => writeAudit(tx, ctx, { actorId: staff.id, action: "gateway.reconcile_now", entity: "settings", entityId: "gateway", after: value }));
+  revalidateStorefront();
+  goTo(PATH, { saved: `Asked the payment company about ${summary.checked} payment${summary.checked === 1 ? "" : "s"}: ${summary.paid.length} newly paid, ${summary.latePayments.length} paid after cancel, ${summary.mismatches.length} amount mismatch, ${cancelled.length} unpaid order${cancelled.length === 1 ? "" : "s"} cancelled.${summary.errors.length ? ` ${summary.errors.length} could not be checked: ${summary.errors[0]}` : ""}` });
 }

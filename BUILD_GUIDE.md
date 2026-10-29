@@ -418,6 +418,8 @@ Implement adapters for the provider(s) you chose, sandbox first: create payment 
 
 **Done when:** sandbox payment marks order PAID only via callback; replaying the same webhook changes nothing; tampered amount is rejected.
 
+> ✅ **Built (2026-10-29, v1.19).** SPECIFICATION §31, defaults Q104–Q116. Vendor-neutral gateway adapter (`src/server/payments/`) plus a local test gateway (`npm run gateway:test`); no live vendor yet. 358 unit tests; checked in a production build: payment marked paid only by the signed callback, replay → duplicate/no change, edited or wrongly signed body → 400, signed wrong amount → 422 and "Payment problem", lost callback recovered by the return page, abandoned order cancelled by the job with stock back, late payment → Refund due → gateway refund once, 375 px no sideways scroll. **For M15:** the gateway redirect is a full-page navigation (no frame-src needed); the webhook route takes the raw body and is excluded from CSRF-style origin checks by design (signature is the guard). **For M18:** schedule `POST /api/cron/reconcile-payments` every 10 min with `CRON_SECRET`; give the vendor `{site}/api/webhooks/payments`; set `BETTER_AUTH_URL`. A real vendor = new adapter file + `KNOWN_VENDORS` entry.
+
 ---
 
 ## Milestone 15 — Security hardening *(2 days)* — Spec §11
